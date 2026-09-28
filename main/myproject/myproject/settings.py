@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+from django.contrib.messages import constants as message_constants
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,6 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # --- UC-01: local apps ---
+    'accounts',            # UC-01 (คนที่ 1) — auth, tenant, layout
+    # 'inventory',         # UC-02 (คนที่ 2)
+    # 'menus',             # UC-03 (คนที่ 3)
+    # 'orders',            # UC-04 (คนที่ 4)
+    # 'analytics',         # UC-05, UC-06 (คนที่ 5)
 ]
 
 MIDDLEWARE = [
@@ -54,7 +63,9 @@ ROOT_URLCONF = 'myproject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # UC-01: was [] — point at the project-level templates/ folder so
+        # base.html / navbar.html / accounts/*.html can be found.
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -124,4 +135,22 @@ MAILERS = {
     'default': {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
+}
+
+
+# --------------------------------------------------------------------------
+# UC-01: Auth, Multi-Tenant & Layout — added settings
+# --------------------------------------------------------------------------
+
+# Must be set before the very first `migrate`.
+AUTH_USER_MODEL = 'accounts.CustomUser'
+
+LOGIN_URL = 'accounts:login'
+LOGIN_REDIRECT_URL = 'accounts:home'
+LOGOUT_REDIRECT_URL = 'accounts:login'
+
+# Map Django's "error" message level to Bootstrap 5's "danger" alert class
+# so {{ message.tags }} in base.html renders the right color.
+MESSAGE_TAGS = {
+    message_constants.ERROR: 'danger',
 }
