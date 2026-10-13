@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+{% include 'inventory/_icons.html' %}
+
+<div class="form-card">
+    <a href="{% if ingredient %}{% url 'inventory:detail' ingredient.pk %}{% else %}{% url 'inventory:list' %}{% endif %}" class="btn btn-link btn-icon px-0 mb-2 text-decoration-none">
+        <svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>กลับ
+    </a>
+    <div class="card">
+        <div class="card-body">
+            <h1 class="h4 mb-4"><span class="h-emoji" aria-hidden="true">{% if ingredient %}✏️{% else %}🥬{% endif %}</span>{{ title }}</h1>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% include 'inventory/_field.html' with field=form.name %}
+                {% include 'inventory/_field.html' with field=form.barcode %}
+
+                <div class="row">
+                    <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.unit %}</div>
+                    <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.price %}</div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.stock_quantity %}</div>
+                    {% if form.expiry_date %}
+                    <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.expiry_date %}</div>
+                    {% endif %}
+                </div>
+
+                <datalist id="ingredient-names">
+                    {% for n in names %}<option value="{{ n }}">{% endfor %}
+                </datalist>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">บันทึก</button>
+                    <a href="{% if ingredient %}{% url 'inventory:detail' ingredient.pk %}{% else %}{% url 'inventory:list' %}{% endif %}" class="btn btn-outline-secondary">ยกเลิก</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

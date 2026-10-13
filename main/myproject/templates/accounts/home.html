@@ -10,6 +10,9 @@
     {% else %}
         <p class="text-muted">ยังไม่มีข้อมูลร้านผูกกับบัญชีนี้</p>
     {% endif %}
+    <div class="mt-3">
+        <a href="{% url 'inventory:list' %}" class="btn btn-primary">ไปที่คลังวัตถุดิบ</a>
+    </div>
     <hr>
     <p class="text-muted mb-0">
         หน้านี้เป็นหน้าเริ่มต้นชั่วคราวของ UC-01 (Auth &amp; Tenant)

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ ingredient.name }}{% endblock %}
+
+{% block content %}
+{% include 'inventory/_icons.html' %}
+
+<a href="{% url 'inventory:list' %}" class="btn btn-link btn-icon px-0 mb-2 text-decoration-none">
+    <svg class="icon" aria-hidden="true"><use href="#i-back"/></svg>คลังวัตถุดิบ
+</a>
+
+<div class="page-head">
+    <div>
+        <h1>{{ ingredient.name }}</h1>
+        <p>บาร์โค้ด <code>{{ ingredient.barcode }}</code></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'inventory:update' ingredient.pk %}" class="btn btn-outline-secondary btn-icon">
+            <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>แก้ไข
+        </a>
+        {% if can_delete %}
+            <a href="{% url 'inventory:delete' ingredient.pk %}" class="btn btn-outline-danger btn-icon">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>ลบ
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="text-muted small">คงเหลือ</div>
+                <div class="big-number mb-3">
+                    {{ ingredient.stock_quantity|floatformat:"-3" }}
+                    <span class="fs-6 fw-normal text-muted">{{ ingredient.get_unit_display }}</span>
+                </div>
+                <dl class="def-list">
+                    <dt>ราคาต่อหน่วย</dt>
+                    <dd>฿{{ ingredient.price|floatformat:2 }}</dd>
+                    <dt>จำนวนล็อต</dt>
+                    <dd>{{ lots|length }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card" id="stock-in">
+            <div class="card-body">
+                <h2 class="h5 mb-3"><span class="h-emoji" aria-hidden="true">📥</span>รับเข้าสต็อก</h2>
+                <form method="post" action="{% url 'inventory:stock_in' ingredient.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ stock_in_form.quantity.id_for_label }}">จำนวนที่รับเข้า ({{ ingredient.get_unit_display }})</label>
+                        {{ stock_in_form.quantity }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ stock_in_form.expiry_date.id_for_label }}">วันหมดอายุของล็อตนี้</label>
+                        {{ stock_in_form.expiry_date }}
+                        <div class="form-text">ไม่บังคับ</div>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-icon">
+                        <svg class="icon" aria-hidden="true"><use href="#i-in"/></svg>รับเข้า
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body pb-2">
+                <h2 class="h5 mb-0"><span class="h-emoji" aria-hidden="true">🧾</span>ล็อตที่รับเข้า</h2>
+            </div>
+            <div class="table-responsive">
+                <table class="table data-table align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">รหัสล็อต</th>
+                            <th scope="col" class="num">รับเข้า</th>
+                            <th scope="col" class="num">คงเหลือ</th>
+                            <th scope="col">หมดอายุ</th>
+                            <th scope="col">รับเมื่อ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for lot in lots %}
+                        <tr>
+                            <td><code>{{ lot.lot_code }}</code></td>
+                            <td class="num">{{ lot.quantity|floatformat:"-3" }}</td>
+                            <td class="num">{{ lot.remaining_quantity|floatformat:"-3" }}</td>
+                            <td>
+                                {% if lot.expiry_date %}
+                                    <span class="text-nowrap">{{ lot.expiry_date|date:"d/m/Y" }}</span>
+                                    {% if lot.expiry_state == 'expired' %}
+                                        <span class="chip chip-bad">หมดอายุแล้ว</span>
+                                    {% elif lot.expiry_state == 'soon' %}
+                                        <span class="chip chip-warn">ใกล้หมดอายุ</span>
+                                    {% endif %}
+                                {% else %}<span class="text-muted">-</span>{% endif %}
+                            </td>
+                            <td>
+                                <span class="text-nowrap">{{ lot.received_at|date:"d/m/Y H:i" }}</span>
+                                <span class="item-sub">โดย {{ lot.received_by.username|default:"-" }}</span>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="5"><div class="empty"><div class="empty-emoji" aria-hidden="true">📭</div><p class="mb-0">ยังไม่เคยรับเข้า ลองกรอกจำนวนทางซ้ายได้เลย</p></div></td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body pt-2">
+                <p class="text-muted small mb-0">"คงเหลือ" ของล็อตจะลดลงเมื่อระบบขาย (US-04) ตัดสต็อกตามล็อตแล้วเท่านั้น</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
