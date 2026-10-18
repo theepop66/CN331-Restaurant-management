@@ -1,13 +1,13 @@
 # US-03 local specification and tickets
 
-Status: implemented locally; final code review in progress. This is the active tracker for US-03.
+Status: implemented, reviewed and committed locally. This is the active tracker for US-03.
 
 - [Approved specification](spec.md)
-- All six tickets are in review after implementation and validation. Begin a ticket only when its
+- All six tickets are done after implementation, validation and independent review. Begin a ticket only when its
   declared blockers are complete.
 - The approved testing interfaces are owner-facing Django requests using a real
   test database, plus the shared menu read interface consumed by POS/reporting.
-- Implementation is complete; 92 tests pass (one optional browser test skipped), the separate real-browser check passes, and total coverage is 93.66%.
+- Implementation is complete; 94 tests pass with one optional browser skip in the full run, the separate real-browser check passes, and total coverage is 93.56%.
 
 ## Tickets and blocking edges
 
@@ -40,3 +40,5 @@ The user selected local files only after the earlier publication. The generated
 GitHub spec and tickets (9-15) were closed on the user's explicit request. The
 original US-03 parent (4) remains open and unchanged. Further external actions
 require new user authorization.
+
+Validation and review: [integration guide](../../docs/US-03-integration.md) and [review report](../../docs/US-03-review.md).

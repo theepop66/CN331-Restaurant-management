@@ -1,0 +1,101 @@
+{
+  "repository": "theepop66/CN331-Restaurant-management",
+  "parent": {
+    "body": "As a restaurant owner, I want to create menu items and define their recipes with ingredients and quantities, so that the system can automatically calculate the cost per dish.                               \n                                                                                                                                                                                                                 \n    ### Acceptance Criteria                                                                                                                                                                                      \n    - [ ] User can create, edit, and delete menu items with their selling prices.                                                                                                                                \n    - [ ] User can attach multiple ingredients with specified quantities to a menu item (Recipe/BOM).                                                                                                            \n    - [ ] The system dynamically calculates and displays the cost per dish based on recipe ingredients.                                                                                                          \n    - [ ] Cross-tenant check prevents adding ingredients from other restaurants into recipes.",
+    "comments": 0,
+    "labels": [],
+    "number": 4,
+    "state": "open",
+    "title": "[US-03] Menu Management and Recipe Bill of Materials Builder",
+    "updated_at": "2026-09-11T15:23:59Z"
+  },
+  "spec": {
+    "number": 9,
+    "title": "[US-03] Specification: Menu Management and Recipe BOM",
+    "url": "https://github.com/theepop66/CN331-Restaurant-management/issues/9",
+    "state": "CLOSED"
+  },
+  "tickets": [
+    {
+      "ordinal": 1,
+      "number": 10,
+      "title": "[US-03] Restrict business screens to restaurant owners",
+      "url": "https://github.com/theepop66/CN331-Restaurant-management/issues/10",
+      "blocked_by": [],
+      "source": "01-owner-only-access.md",
+      "state": "CLOSED"
+    },
+    {
+      "ordinal": 2,
+      "number": 11,
+      "title": "[US-03] Require positive ingredient unit prices",
+      "url": "https://github.com/theepop66/CN331-Restaurant-management/issues/11",
+      "blocked_by": [],
+      "source": "02-positive-ingredient-prices.md",
+      "state": "CLOSED"
+    },
+    {
+      "ordinal": 3,
+      "number": 12,
+      "title": "[US-03] Create and edit private draft menus",
+      "url": "https://github.com/theepop66/CN331-Restaurant-management/issues/12",
+      "blocked_by": [
+        10
+      ],
+      "source": "03-draft-menu-management.md",
+      "state": "CLOSED"
+    },
+    {
+      "ordinal": 4,
+      "number": 13,
+      "title": "[US-03] Build recipes with current ingredient costs",
+      "url": "https://github.com/theepop66/CN331-Restaurant-management/issues/13",
+      "blocked_by": [
+        11,
+        12
+      ],
+      "source": "04-recipe-builder-and-costs.md",
+      "state": "CLOSED"
+    },
+    {
+      "ordinal": 5,
+      "number": 14,
+      "title": "[US-03] Repair recipes after ingredient deletion",
+      "url": "https://github.com/theepop66/CN331-Restaurant-management/issues/14",
+      "blocked_by": [
+        13
+      ],
+      "source": "05-deleted-ingredient-repair.md",
+      "state": "CLOSED"
+    },
+    {
+      "ordinal": 6,
+      "number": 15,
+      "title": "[US-03] Activate valid menus for owner POS",
+      "url": "https://github.com/theepop66/CN331-Restaurant-management/issues/15",
+      "blocked_by": [
+        14
+      ],
+      "source": "06-menu-availability-and-pos-contract.md",
+      "state": "CLOSED"
+    }
+  ],
+  "triage_label_applied": false,
+  "native_dependencies_applied": false,
+  "permission_note": "Historical record: label creation and native dependencies were denied during earlier publication. The user then selected local files only and explicitly requested closure of generated GitHub issues 9-15. All seven were closed. No further external metadata or publication is requested.",
+  "verified": true,
+  "parent_unchanged": true,
+  "local_only": true,
+  "closed_issues": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "active_tracker": "local-markdown",
+  "active_feature_directory": ".scratch/us-03",
+  "historical_record_only": true
+}
