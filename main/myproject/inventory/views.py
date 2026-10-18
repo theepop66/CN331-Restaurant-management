@@ -5,9 +5,10 @@ from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Min, Q
+from django.db.models import F, Min, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -63,13 +64,28 @@ def _add_stock(restaurant, ingredient_id, quantity, user, expiry_date=None):
     บวกสต็อกและสร้างล็อต (StockIn) ในธุรกรรมเดียว
     คืนค่า (ingredient, ยอดเดิม, ยอดใหม่, ล็อต)
     """
+    field = Ingredient._meta.get_field('stock_quantity')
+    maximum = (
+        Decimal(10) ** (field.max_digits - field.decimal_places)
+        - Decimal(1).scaleb(-field.decimal_places)
+    )
     with transaction.atomic():
-        ingredient = Ingredient.objects.select_for_update().get(
+        # Check and increment together; SQLite does not support row locks.
+        updated = Ingredient.objects.filter(
+            pk=ingredient_id, restaurant=restaurant,
+            stock_quantity__lte=maximum - quantity,
+        ).update(
+            stock_quantity=F('stock_quantity') + quantity,
+            revision=F('revision') + 1, updated_at=timezone.now(),
+        )
+        ingredient = Ingredient.objects.get(
             pk=ingredient_id, restaurant=restaurant,
         )
-        old = ingredient.stock_quantity
-        ingredient.stock_quantity = old + quantity
-        ingredient.save(update_fields=['stock_quantity', 'updated_at'])
+        if not updated:
+            raise ValidationError(
+                f'ปริมาณคงเหลือรวมต้องไม่เกิน {_fmt(maximum)}'
+            )
+        old = ingredient.stock_quantity - quantity
         lot = StockIn.objects.create(
             restaurant=restaurant,
             ingredient=ingredient,
@@ -182,9 +198,13 @@ def ingredient_update(request, restaurant, pk):
     if request.method == 'POST':
         form = IngredientForm(request.POST, instance=ingredient, restaurant=restaurant)
         if form.is_valid():
-            form.save()
-            messages.success(request, f'✅ บันทึกการแก้ไข "{ingredient.name}" แล้ว')
-            return redirect('inventory:detail', pk=ingredient.pk)
+            if ingredient.save_if_current(form.cleaned_data['expected_revision']):
+                messages.success(request, f'✅ บันทึกการแก้ไข "{ingredient.name}" แล้ว')
+                return redirect('inventory:detail', pk=ingredient.pk)
+            form.add_error(
+                None,
+                'วัตถุดิบนี้มีการเปลี่ยนแปลงแล้ว กรุณาโหลดหน้าใหม่ก่อนบันทึก',
+            )
     else:
         form = IngredientForm(instance=ingredient, restaurant=restaurant)
     return render(request, 'inventory/form.html', {
@@ -243,13 +263,19 @@ def stock_in(request, restaurant, pk):
     back = _safe_next(request, reverse('inventory:detail', args=[ingredient.pk]))
     form = StockInForm(request.POST)
     if form.is_valid():
-        ingredient, old, new, lot = _add_stock(
-            restaurant, ingredient.pk, form.cleaned_data['quantity'],
-            request.user, form.cleaned_data.get('expiry_date'),
-        )
-        messages.success(
-            request, f'📥 รับเข้า {_stock_message(ingredient, old, new)} (ล็อต {lot.lot_code})'
-        )
+        try:
+            ingredient, old, new, lot = _add_stock(
+                restaurant, ingredient.pk, form.cleaned_data['quantity'],
+                request.user, form.cleaned_data.get('expiry_date'),
+            )
+        except ValidationError as error:
+            for text in error.messages:
+                messages.error(request, f'{ingredient.name}: {text}')
+        else:
+            messages.success(
+                request,
+                f'📥 รับเข้า {_stock_message(ingredient, old, new)} (ล็อต {lot.lot_code})',
+            )
     else:
         for errors in form.errors.values():
             for error in errors:
@@ -285,10 +311,15 @@ def scan(request, restaurant):
         return redirect(f"{reverse('inventory:list')}?{urlencode({'not_found': barcode})}")
 
     if quick:
-        ingredient, old, new, lot = _add_stock(
-            restaurant, ingredient.pk, QUICK_SCAN_STEP, request.user,
-        )
-        messages.success(request, f'➕ {_stock_message(ingredient, old, new)}')
+        try:
+            ingredient, old, new, lot = _add_stock(
+                restaurant, ingredient.pk, QUICK_SCAN_STEP, request.user,
+            )
+        except ValidationError as error:
+            for text in error.messages:
+                messages.error(request, f'{ingredient.name}: {text}')
+        else:
+            messages.success(request, f'➕ {_stock_message(ingredient, old, new)}')
         return redirect('inventory:list')
 
     return redirect(f"{reverse('inventory:detail', args=[ingredient.pk])}#stock-in")

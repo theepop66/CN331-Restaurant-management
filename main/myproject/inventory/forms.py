@@ -23,6 +23,13 @@ class IngredientForm(forms.ModelForm):
     - ตอนแก้ไข: แก้ยอดสต็อกตรง ๆ ได้ (เป็นการปรับยอด ไม่บันทึกเป็น StockIn)
     """
 
+    expected_revision = forms.IntegerField(
+        min_value=0, widget=forms.HiddenInput(),
+        error_messages={
+            'required': 'กรุณาโหลดหน้าใหม่ก่อนบันทึก',
+            'invalid': 'กรุณาโหลดหน้าใหม่ก่อนบันทึก',
+        },
+    )
     expiry_date = forms.DateField(
         label='วันหมดอายุ (ของปริมาณเริ่มต้น)',
         required=False,
@@ -70,7 +77,9 @@ class IngredientForm(forms.ModelForm):
             # แก้ไขวัตถุดิบเดิม: ไม่มีช่องวันหมดอายุ (วันหมดอายุอยู่ที่ล็อต)
             del self.fields['expiry_date']
             self.fields['stock_quantity'].label = 'ปริมาณคงเหลือ (ปรับยอด)'
+            self.initial['expected_revision'] = self.instance.revision
         else:
+            del self.fields['expected_revision']
             self.fields['stock_quantity'].label = 'ปริมาณเริ่มต้น'
             self.fields['stock_quantity'].required = False
 
@@ -92,7 +101,11 @@ class IngredientForm(forms.ModelForm):
         barcode = (self.cleaned_data.get('barcode') or '').strip()
         if not barcode:
             return ''
-        if barcode.upper().startswith(Ingredient.GENERATED_BARCODE_PREFIX):
+        unchanged = self.instance.pk and barcode == self.instance.barcode
+        if (
+            barcode.upper().startswith(Ingredient.GENERATED_BARCODE_PREFIX)
+            and not unchanged
+        ):
             raise forms.ValidationError(
                 f'รหัสที่ขึ้นต้นด้วย "{Ingredient.GENERATED_BARCODE_PREFIX}" '
                 'สงวนไว้ให้ระบบสร้างอัตโนมัติ'

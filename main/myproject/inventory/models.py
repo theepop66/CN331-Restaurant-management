@@ -3,8 +3,9 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.functions import Lower
+from django.utils import timezone
 
 
 class Ingredient(models.Model):
@@ -54,6 +55,7 @@ class Ingredient(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    revision = models.PositiveBigIntegerField(default=0, editable=False)
 
     class Meta:
         ordering = ['name']
@@ -88,6 +90,24 @@ class Ingredient(models.Model):
             if not self.barcode:
                 self.barcode = f'{self.GENERATED_BARCODE_PREFIX}{self.pk:06d}'
                 super().save(update_fields=['barcode'])
+
+    def save_if_current(self, expected_revision):
+        """Save an edit only if no edit or receipt has changed this version."""
+        barcode = self.barcode or f'{self.GENERATED_BARCODE_PREFIX}{self.pk:06d}'
+        updated_at = timezone.now()
+        saved = type(self).objects.filter(
+            pk=self.pk, restaurant_id=self.restaurant_id,
+            revision=expected_revision,
+        ).update(
+            name=self.name, barcode=barcode, unit=self.unit,
+            price=self.price, stock_quantity=self.stock_quantity,
+            updated_at=updated_at, revision=F('revision') + 1,
+        )
+        if saved:
+            self.barcode = barcode
+            self.updated_at = updated_at
+            self.revision = expected_revision + 1
+        return bool(saved)
 
 
 class StockIn(models.Model):
