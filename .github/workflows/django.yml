@@ -1,0 +1,24 @@
+name: Django checks
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: main/requirements*.txt
+      - run: python -m pip install -r main/requirements-dev.txt
+      - run: python -m mypy --config-file mypy.ini
+      - run: python -m ruff check main/myproject/menus main/myproject/accounts/decorators.py main/myproject/accounts/transactions.py main/myproject/accounts/tests.py main/myproject/inventory/test_prices.py main/myproject/inventory/test_price_migration.py
+      - run: python manage.py check && python manage.py makemigrations --check --dry-run
+        working-directory: main/myproject
+      - run: python -m coverage run --rcfile=../../.coveragerc manage.py test && python -m coverage report --rcfile=../../.coveragerc
+        working-directory: main/myproject

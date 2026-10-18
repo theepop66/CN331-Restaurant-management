@@ -59,7 +59,7 @@ class IngredientForm(forms.ModelForm):
             }),
             'unit': forms.Select(attrs={'class': 'form-select'}),
             'price': forms.NumberInput(attrs={
-                'class': 'form-control', 'min': '0', 'step': '0.01',
+                'class': 'form-control', 'min': '0.01', 'step': '0.01',
             }),
             'stock_quantity': forms.NumberInput(attrs={
                 'class': 'form-control', 'min': '0', 'step': '0.001',
@@ -116,8 +116,8 @@ class IngredientForm(forms.ModelForm):
 
     def clean_price(self):
         price = self.cleaned_data['price']
-        if price < ZERO:
-            raise forms.ValidationError('ราคาต้องไม่ติดลบ')
+        if price <= ZERO:
+            raise forms.ValidationError('ราคาต้องมากกว่า 0')
         return price
 
     def clean_stock_quantity(self):

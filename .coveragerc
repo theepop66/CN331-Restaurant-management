@@ -1,0 +1,12 @@
+[run]
+source = accounts,inventory,menus
+omit =
+    */migrations/*
+    */tests.py
+    */tests/*
+    */test_*.py
+
+[report]
+show_missing = True
+precision = 2
+fail_under = 80.01

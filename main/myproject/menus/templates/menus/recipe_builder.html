@@ -1,0 +1,37 @@
+{% extends 'base.html' %}{% load static %}
+{% comment %}[US-03][UC-03] Per-serving BOM, saved cost and explicit availability.{% endcomment %}
+{% block title %}สูตรอาหาร · {{ menu.name }}{% endblock %}
+{% block content %}
+<a href="{% url 'menus:list' %}" class="text-decoration-none">← เมนูอาหาร</a>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 my-3">
+ <div><h1 class="h3 mb-1">{{ snapshot.name }}</h1><span class="text-muted">ราคาขาย ฿{{ snapshot.price|floatformat:2 }} ต่อจาน</span> <a class="ms-2 small" href="{% url 'menus:update' menu.pk %}">แก้ไขเมนู</a></div>
+ <span class="badge {% if snapshot.is_active %}text-bg-success{% else %}text-bg-secondary{% endif %} p-2">{% if snapshot.is_active %}พร้อมขาย{% else %}ไม่พร้อมขาย{% endif %}</span>
+</div>
+<div class="row g-4"><div class="col-lg-8">
+<div class="card border-0 shadow-sm"><div class="card-body p-4">
+<h2 class="h5">สูตรอาหารต่อ 1 จาน</h2><p class="text-muted small">ใช้หน่วยที่แสดงข้างชื่อวัตถุดิบ เช่น ข้าว 200 กรัม = 0.200 กก.</p>
+<form method="post" id="recipe-form">{% csrf_token %}
+{{ revision_form.expected_revision }}{{ revision_form.ingredient_state }}
+{% if revision_form.errors %}<div class="alert alert-danger" role="alert">{{ revision_form.non_field_errors }}{% for field in revision_form %}{{ field.errors }}{% endfor %}<a href="{% url 'menus:recipe' menu.pk %}">โหลดสูตรล่าสุด</a></div>{% endif %}
+{{ formset.management_form }}
+{% if formset.non_form_errors %}<div class="alert alert-danger" role="alert">{{ formset.non_form_errors }}</div>{% endif %}
+<div id="recipe-rows">{% for row in formset %}{% include 'menus/_recipe_row.html' %}{% endfor %}</div>
+<button class="btn btn-outline-primary mb-4" id="add-row" type="button" hidden>+ เพิ่มวัตถุดิบ</button>
+<noscript><p class="small text-muted">ใช้แถวว่างเพื่อเพิ่มวัตถุดิบ แล้วบันทึกเพื่อเพิ่มรายการถัดไป</p></noscript>
+<div class="border-top pt-3"><button class="btn btn-primary" type="submit">บันทึกสูตรอาหาร</button> <a class="btn btn-outline-secondary" href="{% url 'menus:recipe' menu.pk %}">โหลดข้อมูลล่าสุด</a></div>
+</form>
+<template id="empty-row">{% include 'menus/_recipe_row.html' with row=formset.empty_form %}</template>
+</div></div></div>
+<div class="col-lg-4"><section class="card border-0 shadow-sm mb-3"><div class="card-body p-4">
+<h2 class="h5">ต้นทุนวัตถุดิบต่อจาน</h2><p class="small text-muted">คำนวณจากสูตรที่บันทึกล่าสุดและราคาปัจจุบัน</p>
+{% for line in snapshot.lines %}<div class="d-flex justify-content-between gap-2 border-bottom py-2"><div>{{ line.name }}{% if not line.ingredient_id %}<span class="text-danger small"> (ถูกลบ)</span>{% endif %}<div class="text-muted small">{{ line.quantity_used|floatformat:"-3" }} {{ line.unit }}</div></div><div class="text-nowrap">{% if line.cost is not None %}฿{{ line.cost|floatformat:2 }}{% else %}—{% endif %}</div></div>{% endfor %}
+<div class="pt-3"><span class="text-muted small">รวมต่อจาน</span><div class="h3 mt-1">{% if snapshot.is_complete %}฿{{ snapshot.cost_per_serving|floatformat:2 }}{% else %}ยังคำนวณไม่ได้{% endif %}</div></div>
+{% if not snapshot.is_complete %}<p class="text-warning-emphasis small mb-0">สูตรอาหารยังไม่สมบูรณ์ กรุณาเพิ่มหรือแก้ไขวัตถุดิบก่อนเปิดขาย</p>{% endif %}
+{% if snapshot.exceeds_price %}<div class="alert alert-warning mt-3 mb-0" role="alert">ต้นทุนวัตถุดิบสูงกว่าราคาขาย คุณยังสามารถบันทึกและเปิดขายเมนูนี้ได้</div>{% endif %}
+</div></section>
+<section class="card border-0 shadow-sm"><div class="card-body p-4"><h2 class="h5">สถานะการขาย</h2><p class="text-muted small">บันทึกสูตรแล้วเปิดขายเมื่อคุณพร้อม ปิดขายเพื่อพักเมนูโดยเก็บข้อมูลเดิมไว้</p>
+<form method="post" action="{% url 'menus:availability' menu.pk %}">{% csrf_token %}<input type="hidden" name="expected_revision" value="{{ snapshot.revision }}">
+{% if snapshot.is_active %}<button type="submit" class="btn btn-outline-secondary w-100">ปิดขายเมนูนี้</button>{% else %}<input type="hidden" name="is_active" value="on"><button type="submit" class="btn btn-success w-100" {% if not snapshot.is_complete %}disabled{% endif %}>เปิดขายเมนูนี้</button>{% endif %}
+</form></div></section></div></div>
+{% endblock %}
+{% block extra_js %}<script src="{% static 'menus/recipe_builder.js' %}" defer></script>{% endblock %}

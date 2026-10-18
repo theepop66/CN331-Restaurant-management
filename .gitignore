@@ -38,3 +38,10 @@ media/
 *.swp
 *.swo
 *~
+
+# Local verification output
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.scratch/us-03/*.png
