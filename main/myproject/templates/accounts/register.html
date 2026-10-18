@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}สมัครสมาชิก{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title mb-4 text-center">สมัครสมาชิก (เจ้าของร้าน)</h3>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <h6 class="text-muted">ข้อมูลร้านของคุณ</h6>
+                    <div class="mb-3">
+                        <label class="form-label">{{ restaurant_form.name.label }}</label>
+                        {{ restaurant_form.name }}
+                        {% for error in restaurant_form.name.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ restaurant_form.address.label }}</label>
+                        {{ restaurant_form.address }}
+                    </div>
+
+                    <hr>
+                    <h6 class="text-muted">บัญชีผู้ใช้ของคุณ</h6>
+                    <div class="mb-3">
+                        <label class="form-label">ชื่อผู้ใช้</label>
+                        {{ user_form.username }}
+                        {% for error in user_form.username.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">อีเมล</label>
+                        {{ user_form.email }}
+                        {% for error in user_form.email.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">รหัสผ่าน</label>
+                        {{ user_form.password1 }}
+                        {% for error in user_form.password1.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ยืนยันรหัสผ่าน</label>
+                        {{ user_form.password2 }}
+                        {% for error in user_form.password2.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">สร้างร้านและสมัครสมาชิก</button>
+                </form>
+                <p class="text-center mt-3 mb-0">
+                    มีบัญชีอยู่แล้ว? <a href="{% url 'accounts:login' %}">เข้าสู่ระบบ</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
