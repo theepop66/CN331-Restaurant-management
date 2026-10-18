@@ -9,6 +9,9 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-lg-center">
                 {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link{% if request.resolver_match.app_name == 'inventory' %} active{% endif %}" href="{% url 'inventory:list' %}">คลังวัตถุดิบ</a>
+                    </li>
                     <li class="nav-item me-lg-3">
                         <span class="nav-link text-white-50">
                             {{ user.username }}{% if user.restaurant %} · {{ user.restaurant.name }}{% endif %}
