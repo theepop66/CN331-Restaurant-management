@@ -72,7 +72,7 @@ class CrudAndValidationTests(InventoryTestBase):
             self.payload(price='-1', stock_quantity='-5'))
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(Ingredient.objects.exists())
-        self.assertContains(resp, 'ราคาต้องไม่ติดลบ')
+        self.assertContains(resp, 'ราคาต้องมากกว่า 0')
         self.assertContains(resp, 'ปริมาณต้องไม่ติดลบ')
 
     def test_negative_stock_rejected_on_edit(self):
@@ -136,7 +136,7 @@ class CrudAndValidationTests(InventoryTestBase):
 
     def test_edit_adjusts_stock_without_stockin(self):
         item = self.make()
-        self.client.force_login(self.staff)
+        self.client.force_login(self.owner)
         data = self.payload(
             name=item.name, price='31', stock_quantity='9',
             expected_revision=item.revision,
@@ -403,13 +403,13 @@ class TenantIsolationTests(InventoryTestBase):
 class StockInTests(InventoryTestBase):
     def test_stock_in_adds_and_creates_lot(self):
         item = self.make()
-        self.client.force_login(self.staff)
+        self.client.force_login(self.owner)
         resp = self.client.post(reverse('inventory:stock_in', args=[item.pk]),
                                 {'quantity': '3'}, follow=True)
         item.refresh_from_db()
         self.assertEqual(item.stock_quantity, Decimal('8'))
         lot = item.stock_ins.get()
-        self.assertEqual(lot.received_by, self.staff)
+        self.assertEqual(lot.received_by, self.owner)
         self.assertContains(resp, 'ข้าวสาร: 5 → 8 กก.')
 
     def test_stock_in_zero_or_negative_rejected(self):

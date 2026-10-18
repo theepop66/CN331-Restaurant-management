@@ -1,0 +1,12 @@
+target-version = "py313"
+line-length = 100
+exclude = ["venv", ".scratch", "docs", "**/migrations"]
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[lint.isort]
+known-first-party = ["accounts", "inventory", "menus", "myproject"]
+
+[format]
+quote-style = "single"

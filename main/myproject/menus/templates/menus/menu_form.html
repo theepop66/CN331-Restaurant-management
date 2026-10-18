@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% comment %}[US-03][UC-03] Create or edit menu metadata.{% endcomment %}
+{% block title %}{% if menu %}แก้ไขเมนู{% else %}สร้างเมนู{% endif %}{% endblock %}
+{% block content %}
+<a href="{% url 'menus:list' %}" class="text-decoration-none">← เมนูอาหาร</a>
+<div class="row justify-content-center mt-3"><div class="col-lg-7">
+<div class="card border-0 shadow-sm"><div class="card-body p-4">
+<h1 class="h4">{% if menu %}แก้ไขข้อมูลเมนู{% else %}สร้างเมนูใหม่{% endif %}</h1>
+<p class="text-muted">{% if menu %}ปรับชื่อและราคาขายของเมนู{% else %}บันทึกเมนูก่อน แล้วเพิ่มสูตรอาหารเพื่อเตรียมเปิดขาย{% endif %}</p>
+<form method="post">{% csrf_token %}
+{% if revision_form %}{{ revision_form.expected_revision }}{{ revision_form.errors }}{% endif %}
+{% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+{% for field in form %}<div class="mb-3"><label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>{{ field }}{% for error in field.errors %}<div class="text-danger small" role="alert">{{ error }}</div>{% endfor %}</div>{% endfor %}
+<button class="btn btn-primary" type="submit">{% if menu %}บันทึกข้อมูล{% else %}บันทึกและเพิ่มสูตรอาหาร{% endif %}</button> <a href="{% url 'menus:list' %}" class="btn btn-outline-secondary">ยกเลิก</a>
+</form>
+{% if form.non_field_errors and current %}<div class="border rounded p-3 mt-4"><h2 class="h6">ข้อมูลที่บันทึกล่าสุด</h2><p>{{ current.name }} · ฿{{ current.price|floatformat:2 }}</p><a href="{% url 'menus:update' menu.pk %}">โหลดข้อมูลล่าสุด</a></div>{% endif %}
+</div></div></div></div>
+{% endblock %}

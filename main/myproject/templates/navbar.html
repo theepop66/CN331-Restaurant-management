@@ -13,6 +13,9 @@
                         <a class="nav-link{% if request.resolver_match.app_name == 'inventory' %} active{% endif %}" href="{% url 'inventory:list' %}">คลังวัตถุดิบ</a>
                     </li>
                     <li class="nav-item me-lg-3">
+                        <a class="nav-link{% if request.resolver_match.app_name == 'menus' %} active{% endif %}" href="{% url 'menus:list' %}">เมนูและสูตรอาหาร</a>
+                    </li>
+                    <li class="nav-item me-lg-3">
                         <span class="nav-link text-white-50">
                             {{ user.username }}{% if user.restaurant %} · {{ user.restaurant.name }}{% endif %}
                         </span>

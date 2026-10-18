@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     # --- UC-01: local apps ---
     'accounts',            # UC-01 (คนที่ 1) — auth, tenant, layout
     'inventory',           # UC-02 (คนที่ 2) — คลังวัตถุดิบ + รับเข้าสต็อก
-    # 'menus',             # UC-03 (คนที่ 3)
+    'menus',               # US-03 / UC-03 — menus and recipe BOM
     # 'orders',            # UC-04 (คนที่ 4)
     # 'analytics',         # UC-05, UC-06 (คนที่ 5)
 ]

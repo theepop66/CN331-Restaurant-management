@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% comment %}[US-03][UC-03] Explain rejected or stale availability changes.{% endcomment %}
+{% block title %}ยังเปลี่ยนสถานะไม่ได้{% endblock %}
+{% block content %}<div class="card border-0 shadow-sm"><div class="card-body p-4"><h1 class="h4">ยังเปลี่ยนสถานะเมนูไม่ได้</h1><div class="alert alert-danger" role="alert">{{ form.errors }}</div><p>{{ snapshot.name }} · ฿{{ snapshot.price|floatformat:2 }}</p><a href="{% url 'menus:recipe' menu.pk %}" class="btn btn-primary">ตรวจสอบสูตรและข้อมูลล่าสุด</a></div></div>{% endblock %}

@@ -1,11 +1,36 @@
+from contextlib import ExitStack
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.db.models import F, Q
 from django.db.models.functions import Lower
 from django.utils import timezone
+
+from accounts.transactions import restaurant_transaction
+
+
+class IngredientQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        if 'unit' not in kwargs:
+            return super().update(**kwargs)
+        with ExitStack() as stack:
+            for restaurant_id in sorted(set(self.values_list('restaurant_id', flat=True))):
+                stack.enter_context(restaurant_transaction(restaurant_id))
+            changed = self
+            if isinstance(kwargs['unit'], str):
+                changed = changed.exclude(unit=kwargs['unit'])
+            if changed.filter(recipe_items__isnull=False).exists():
+                raise ValidationError({'unit': 'เปลี่ยนหน่วยไม่ได้ เพราะมีสูตรอาหารใช้อยู่'})
+            return super().update(**kwargs)
+
+    def delete(self):
+        with ExitStack() as stack:
+            for restaurant_id in sorted(set(self.values_list('restaurant_id', flat=True))):
+                stack.enter_context(restaurant_transaction(restaurant_id))
+            return super().delete()
 
 
 class Ingredient(models.Model):
@@ -33,6 +58,7 @@ class Ingredient(models.Model):
         BAG = 'bag', 'ถุง'
 
     GENERATED_BARCODE_PREFIX = 'ING-'
+    objects = IngredientQuerySet.as_manager()
 
     restaurant = models.ForeignKey(
         'accounts.Restaurant',
@@ -51,7 +77,7 @@ class Ingredient(models.Model):
     )
     price = models.DecimalField(
         'ราคาต่อหน่วย', max_digits=10, decimal_places=2,
-        default=Decimal('0'), validators=[MinValueValidator(Decimal('0'))],
+        validators=[MinValueValidator(Decimal('0.01'))],
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -60,6 +86,9 @@ class Ingredient(models.Model):
     class Meta:
         ordering = ['name']
         constraints = [
+            models.CheckConstraint(
+                condition=Q(price__gt=0), name='ingredient_price_positive',
+            ),
             # ชื่อไม่ซ้ำในร้านเดียวกัน (ไม่สนตัวพิมพ์เล็ก/ใหญ่)
             models.UniqueConstraint(
                 Lower('name'), 'restaurant',
@@ -84,8 +113,15 @@ class Ingredient(models.Model):
                 return ch
         return self.name[:1]
 
+    def clean(self):
+        if self.pk and type(self).objects.filter(
+            pk=self.pk, recipe_items__isnull=False,
+        ).exclude(unit=self.unit).exists():
+            raise ValidationError({'unit': 'เปลี่ยนหน่วยไม่ได้ เพราะมีสูตรอาหารใช้อยู่'})
+
     def save(self, *args, **kwargs):
-        with transaction.atomic():
+        with restaurant_transaction(self.restaurant_id):
+            self.clean()
             super().save(*args, **kwargs)
             if not self.barcode:
                 self.barcode = f'{self.GENERATED_BARCODE_PREFIX}{self.pk:06d}'
@@ -93,6 +129,11 @@ class Ingredient(models.Model):
 
     def save_if_current(self, expected_revision):
         """Save an edit only if no edit or receipt has changed this version."""
+        with restaurant_transaction(self.restaurant_id):
+            self.clean()
+            return self._save_current_revision(expected_revision)
+
+    def _save_current_revision(self, expected_revision):
         barcode = self.barcode or f'{self.GENERATED_BARCODE_PREFIX}{self.pk:06d}'
         updated_at = timezone.now()
         saved = type(self).objects.filter(
@@ -108,6 +149,10 @@ class Ingredient(models.Model):
             self.updated_at = updated_at
             self.revision = expected_revision + 1
         return bool(saved)
+
+    def delete(self, *args, **kwargs):
+        with restaurant_transaction(self.restaurant_id):
+            return super().delete(*args, **kwargs)
 
 
 class StockIn(models.Model):

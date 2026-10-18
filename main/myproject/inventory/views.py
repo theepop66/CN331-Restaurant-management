@@ -1,10 +1,8 @@
 from datetime import timedelta
 from decimal import Decimal
-from functools import wraps
 from urllib.parse import urlencode
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -15,6 +13,7 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from accounts.decorators import restaurant_owner_required as restaurant_required
 from accounts.models import CustomUser
 
 from .forms import IngredientForm, ScanForm, StockInForm
@@ -23,25 +22,6 @@ from .models import Ingredient, StockIn
 PAGE_SIZE = 20
 QUICK_SCAN_STEP = Decimal('1')  # โหมดสแกนรัว: บวกครั้งละ 1 ตายตัว (ไม่ต้องให้ผู้ใช้เลือก)
 EXPIRING_SOON_DAYS = 7
-
-
-def restaurant_required(view):
-    """
-    ต้องล็อกอิน และบัญชีต้องผูกกับร้าน (tenant) ก่อนใช้งานคลังวัตถุดิบ.
-    ส่ง restaurant เข้า view เป็นอาร์กิวเมนต์ตัวที่สอง เพื่อให้ทุก query
-    กรองตามร้านของผู้ใช้เสมอ
-    """
-
-    @wraps(view)
-    @login_required
-    def wrapper(request, *args, **kwargs):
-        restaurant = request.user.restaurant
-        if restaurant is None:
-            messages.error(request, 'บัญชีนี้ยังไม่ได้ผูกกับร้าน จึงยังใช้คลังวัตถุดิบไม่ได้')
-            return redirect('accounts:home')
-        return view(request, restaurant, *args, **kwargs)
-
-    return wrapper
 
 
 def _fmt(value):
@@ -198,13 +178,18 @@ def ingredient_update(request, restaurant, pk):
     if request.method == 'POST':
         form = IngredientForm(request.POST, instance=ingredient, restaurant=restaurant)
         if form.is_valid():
-            if ingredient.save_if_current(form.cleaned_data['expected_revision']):
-                messages.success(request, f'✅ บันทึกการแก้ไข "{ingredient.name}" แล้ว')
-                return redirect('inventory:detail', pk=ingredient.pk)
-            form.add_error(
-                None,
-                'วัตถุดิบนี้มีการเปลี่ยนแปลงแล้ว กรุณาโหลดหน้าใหม่ก่อนบันทึก',
-            )
+            try:
+                saved = ingredient.save_if_current(form.cleaned_data['expected_revision'])
+            except ValidationError as error:
+                form.add_error(None, error.messages)
+            else:
+                if saved:
+                    messages.success(request, f'✅ บันทึกการแก้ไข "{ingredient.name}" แล้ว')
+                    return redirect('inventory:detail', pk=ingredient.pk)
+                form.add_error(
+                    None,
+                    'วัตถุดิบนี้มีการเปลี่ยนแปลงแล้ว กรุณาโหลดหน้าใหม่ก่อนบันทึก',
+                )
     else:
         form = IngredientForm(instance=ingredient, restaurant=restaurant)
     return render(request, 'inventory/form.html', {
@@ -278,8 +263,8 @@ def stock_in(request, restaurant, pk):
             )
     else:
         for errors in form.errors.values():
-            for error in errors:
-                messages.error(request, f'{ingredient.name}: {error}')
+            for error_text in errors:
+                messages.error(request, f'{ingredient.name}: {error_text}')
     return redirect(back)
 
 

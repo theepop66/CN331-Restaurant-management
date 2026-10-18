@@ -1,11 +1,11 @@
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
-from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from .decorators import owner_required
 from .forms import CustomUserCreationForm, LoginForm, RestaurantForm
 
 
@@ -76,10 +76,10 @@ def logout_view(request):
     return redirect('accounts:login')
 
 
-@login_required
+@owner_required
 def home_view(request):
     """
-    [UC-01] Placeholder landing page after login.
+    [UC-01][US-03][UC-03] Owner landing page, including unassigned accounts.
 
     Deliberately named "home" (not "dashboard") to leave the
     `analytics:dashboard` route free for UC-06 later in the project.

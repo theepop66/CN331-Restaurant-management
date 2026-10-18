@@ -1,0 +1,11 @@
+{% comment %}[US-03][UC-03] Editable recipe row, including missing ingredients.{% endcomment %}
+<div class="recipe-row border rounded p-3 mb-3 bg-white">
+  {% for hidden in row.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
+  {% if row.instance.pk and not row.instance.ingredient_id %}<div class="alert alert-warning py-2">วัตถุดิบถูกลบ: <strong>{{ row.instance.ingredient_name_snapshot }}</strong> ({{ row.instance.ingredient_unit_snapshot }}) — เลือกวัตถุดิบทดแทนหรือลบรายการนี้</div>{% endif %}
+  {{ row.non_field_errors }}
+  <div class="row g-3 align-items-end">
+    <div class="col-md-7"><label class="form-label" for="{{ row.ingredient.id_for_label }}">วัตถุดิบและหน่วยนับ</label>{{ row.ingredient }}<div class="text-danger small">{{ row.ingredient.errors }}</div></div>
+    <div class="col-md-5"><label class="form-label" for="{{ row.quantity_used.id_for_label }}">ปริมาณต่อจาน</label>{{ row.quantity_used }}<div class="text-danger small">{{ row.quantity_used.errors }}</div></div>
+  </div>
+  <div class="d-flex justify-content-end align-items-center gap-3 mt-2"><label class="small text-muted">{{ row.DELETE }} ลบรายการ</label><button class="btn btn-sm btn-outline-danger remove-row" type="button" hidden>ลบ</button></div>
+</div>
