@@ -49,6 +49,12 @@ checks existing prices first. If any are zero or negative it lists their IDs and
 stops, without inventing prices. Correct those records to legitimate positive
 unit prices in the previous version, then retry migration. Zero stock is valid.
 
+The optional Django administration site also requires the owner role and an
+assigned restaurant, in addition to Django's admin permissions. Creating a
+superuser alone does not assign a restaurant. Normal restaurant owners can
+register and use the business screens without being admin users. Restaurant,
+user, inventory and related-choice administration is restricted to that tenant.
+
 ## Checks
 
 Install `main/requirements-dev.txt` for the local checks. From the repository root:

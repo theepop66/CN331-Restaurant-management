@@ -1,56 +1,15 @@
 from django.contrib import admin
-from django.core.exceptions import PermissionDenied
 
-from accounts.models import CustomUser, Restaurant
+from accounts.admin_scope import RestaurantOwnerAdmin
+from accounts.models import CustomUser
 
 from .models import Ingredient, StockIn
-
-
-class RestaurantOwnerAdmin(admin.ModelAdmin):
-    """[US-03] Enabled inventory admin paths use the owner/tenant rule."""
-
-    def _is_owner(self, request):
-        return request.user.role == CustomUser.Role.OWNER and request.user.restaurant_id is not None
-
-    def has_module_permission(self, request):
-        return self._is_owner(request) and super().has_module_permission(request)
-
-    def has_view_permission(self, request, obj=None):
-        return self._is_owner(request) and super().has_view_permission(request, obj)
-
-    def has_add_permission(self, request):
-        return self._is_owner(request) and super().has_add_permission(request)
-
-    def has_change_permission(self, request, obj=None):
-        return self._is_owner(request) and super().has_change_permission(request, obj)
-
-    def has_delete_permission(self, request, obj=None):
-        return self._is_owner(request) and super().has_delete_permission(request, obj)
-
-    def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        if not self._is_owner(request):
-            return queryset.none()
-        return queryset.filter(restaurant_id=request.user.restaurant_id)
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'restaurant':
-            kwargs['queryset'] = Restaurant.objects.filter(pk=request.user.restaurant_id)
-        elif db_field.name == 'ingredient':
-            kwargs['queryset'] = Ingredient.objects.filter(restaurant_id=request.user.restaurant_id)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-    def save_model(self, request, obj, form, change):
-        if not self._is_owner(request):
-            raise PermissionDenied
-        obj.restaurant = request.user.restaurant
-        super().save_model(request, obj, form, change)
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(RestaurantOwnerAdmin):
     list_display = ['name', 'restaurant', 'barcode', 'stock_quantity', 'unit', 'price']
-    list_filter = ['restaurant', 'unit']
+    list_filter = ['unit']
     search_fields = ['name', 'barcode']
 
 
@@ -58,5 +17,12 @@ class IngredientAdmin(RestaurantOwnerAdmin):
 class StockInAdmin(RestaurantOwnerAdmin):
     list_display = ['lot_code', 'ingredient', 'restaurant', 'quantity',
                     'remaining_quantity', 'expiry_date', 'received_at']
-    list_filter = ['restaurant']
+    list_filter = ['expiry_date']
     search_fields = ['lot_code', 'ingredient__name']
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == 'ingredient':
+            kwargs['queryset'] = Ingredient.objects.filter(restaurant_id=request.user.restaurant_id)
+        elif db_field.name == 'received_by':
+            kwargs['queryset'] = CustomUser.objects.filter(restaurant_id=request.user.restaurant_id)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
