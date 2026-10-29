@@ -140,7 +140,7 @@ class OrdersServicesTestCase(TestCase):
         self.egg.refresh_from_db()
         self.assertEqual(self.egg.stock_quantity, Decimal('13.000'))  # 20 - 7
 
-        # Check lot deductions: lot_early should be fully depleted (5), lot_later should have 13 left (deducted 2)
+        # Check lot deductions: lot_early depleted (5), lot_later has 13 left (deducted 2)
         lot_early.refresh_from_db()
         lot_later.refresh_from_db()
         self.assertEqual(lot_early.remaining_quantity, Decimal('0.000'))
@@ -153,7 +153,7 @@ class OrdersServicesTestCase(TestCase):
         self.assertEqual(deductions.get(lot=lot_later).quantity, Decimal('2.000'))
 
     def test_checkout_creates_order_items_with_price_snapshot_and_total(self):
-        """Order item must snapshot name and price; later menu changes should not affect old orders."""
+        """Order item snapshots name and price; menu changes should not affect old orders."""
         order = checkout_order(
             restaurant=self.restaurant,
             user=self.owner,
@@ -178,7 +178,7 @@ class OrdersServicesTestCase(TestCase):
 
     def test_checkout_rejects_when_any_ingredient_short_and_changes_nothing(self):
         """If any ingredient is insufficient, rollback everything and do not create order."""
-        # Pork stock is 5.0 kg; each omelet needs 0.1 kg. Request 60 servings -> needs 6.0 kg (short by 1.0 kg)
+        # Pork stock 5 kg; omelet needs 0.1 kg. Request 60 servings -> needs 6.0 kg (short)
         init_rice_stock = self.rice.stock_quantity
         init_egg_stock = self.egg.stock_quantity
         init_pork_stock = self.pork.stock_quantity
@@ -200,13 +200,15 @@ class OrdersServicesTestCase(TestCase):
         self.assertEqual(self.pork.stock_quantity, init_pork_stock)
 
     def test_cart_lines_sharing_ingredient_are_aggregated(self):
-        """[Review Focus 1] If multiple items share an ingredient, sum requirements before checking stock."""
+        """[Review Focus 1] If multiple items share an ingredient,
+        sum requirements before checking stock.
+        """
         # Set Egg stock to 5 eggs
         self.egg.stock_quantity = Decimal('5.000')
         self.egg.save()
 
         # Fried Rice needs 1 egg. Omelet needs 2 eggs.
-        # Order 2 Fried Rice (needs 2) + 2 Omelet (needs 4) -> Total needed = 6 eggs > 5 available!
+        # Order 2 Fried Rice + 2 Omelet -> Total needed 6 eggs > 5 available!
         with self.assertRaises(StockInsufficient):
             checkout_order(
                 restaurant=self.restaurant,

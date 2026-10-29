@@ -89,7 +89,7 @@ class OrdersViewsTestCase(TestCase):
         self.assertRedirects(response, reverse('orders:success', kwargs={'pk': order.pk}))
 
     def test_checkout_post_insufficient_stock_shows_flash_and_redirects(self):
-        """When stock is insufficient, view catches exception, adds error flash message, and redirects to pos."""
+        """Insufficient stock should catch exception, add error flash and redirect."""
         self.client.force_login(self.owner)
         # 2 kg chicken / 0.25 = 8 servings max. Request 20 servings.
         cart_data = json.dumps([{'menu_id': self.curry.pk, 'quantity': 20}])

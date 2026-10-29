@@ -67,16 +67,23 @@ class Ingredient(models.Model):
     )
     name = models.CharField('ชื่อวัตถุดิบ', max_length=150)
     barcode = models.CharField(
-        'บาร์โค้ด', max_length=64, blank=True,
+        'บาร์โค้ด',
+        max_length=64,
+        blank=True,
         help_text='เว้นว่างได้ ระบบจะสร้างรหัสให้อัตโนมัติ',
     )
     unit = models.CharField('หน่วย', max_length=10, choices=Unit.choices)
     stock_quantity = models.DecimalField(
-        'ปริมาณคงเหลือ', max_digits=12, decimal_places=3,
-        default=Decimal('0'), validators=[MinValueValidator(Decimal('0'))],
+        'ปริมาณคงเหลือ',
+        max_digits=12,
+        decimal_places=3,
+        default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
     )
     price = models.DecimalField(
-        'ราคาต่อหน่วย', max_digits=10, decimal_places=2,
+        'ราคาต่อหน่วย',
+        max_digits=10,
+        decimal_places=2,
         validators=[MinValueValidator(Decimal('0.01'))],
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -87,11 +94,13 @@ class Ingredient(models.Model):
         ordering = ['name']
         constraints = [
             models.CheckConstraint(
-                condition=Q(price__gt=0), name='ingredient_price_positive',
+                condition=Q(price__gt=0),
+                name='ingredient_price_positive',
             ),
             # ชื่อไม่ซ้ำในร้านเดียวกัน (ไม่สนตัวพิมพ์เล็ก/ใหญ่)
             models.UniqueConstraint(
-                Lower('name'), 'restaurant',
+                Lower('name'),
+                'restaurant',
                 name='uniq_ingredient_name_per_restaurant',
             ),
             # บาร์โค้ดไม่ซ้ำในร้านเดียวกัน (ยกเว้นค่าว่าง)
@@ -114,9 +123,16 @@ class Ingredient(models.Model):
         return self.name[:1]
 
     def clean(self):
-        if self.pk and type(self).objects.filter(
-            pk=self.pk, recipe_items__isnull=False,
-        ).exclude(unit=self.unit).exists():
+        if (
+            self.pk
+            and type(self)
+            .objects.filter(
+                pk=self.pk,
+                recipe_items__isnull=False,
+            )
+            .exclude(unit=self.unit)
+            .exists()
+        ):
             raise ValidationError({'unit': 'เปลี่ยนหน่วยไม่ได้ เพราะมีสูตรอาหารใช้อยู่'})
 
     def save(self, *args, **kwargs):
@@ -136,13 +152,22 @@ class Ingredient(models.Model):
     def _save_current_revision(self, expected_revision):
         barcode = self.barcode or f'{self.GENERATED_BARCODE_PREFIX}{self.pk:06d}'
         updated_at = timezone.now()
-        saved = type(self).objects.filter(
-            pk=self.pk, restaurant_id=self.restaurant_id,
-            revision=expected_revision,
-        ).update(
-            name=self.name, barcode=barcode, unit=self.unit,
-            price=self.price, stock_quantity=self.stock_quantity,
-            updated_at=updated_at, revision=F('revision') + 1,
+        saved = (
+            type(self)
+            .objects.filter(
+                pk=self.pk,
+                restaurant_id=self.restaurant_id,
+                revision=expected_revision,
+            )
+            .update(
+                name=self.name,
+                barcode=barcode,
+                unit=self.unit,
+                price=self.price,
+                stock_quantity=self.stock_quantity,
+                updated_at=updated_at,
+                revision=F('revision') + 1,
+            )
         )
         if saved:
             self.barcode = barcode
@@ -178,17 +203,22 @@ class StockIn(models.Model):
     )
     lot_code = models.CharField('รหัสล็อต', max_length=32, blank=True)
     quantity = models.DecimalField(
-        'จำนวนที่รับเข้า', max_digits=12, decimal_places=3,
+        'จำนวนที่รับเข้า',
+        max_digits=12,
+        decimal_places=3,
         validators=[MinValueValidator(Decimal('0.001'))],
     )
     remaining_quantity = models.DecimalField(
-        'คงเหลือในล็อต', max_digits=12, decimal_places=3,
+        'คงเหลือในล็อต',
+        max_digits=12,
+        decimal_places=3,
     )
     expiry_date = models.DateField('วันหมดอายุ', null=True, blank=True)
     received_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         related_name='+',
     )
     received_at = models.DateTimeField(auto_now_add=True)

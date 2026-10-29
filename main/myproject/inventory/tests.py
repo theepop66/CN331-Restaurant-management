@@ -19,24 +19,29 @@ class InventoryTestBase(TestCase):
         cls.shop_a = Restaurant.objects.create(name='ร้าน A')
         cls.shop_b = Restaurant.objects.create(name='ร้าน B')
         cls.owner = CustomUser.objects.create_user(
-            'owner_a', password='pw12345!', restaurant=cls.shop_a,
-            role=CustomUser.Role.OWNER)
+            'owner_a', password='pw12345!', restaurant=cls.shop_a, role=CustomUser.Role.OWNER
+        )
         cls.staff = CustomUser.objects.create_user(
-            'staff_a', password='pw12345!', restaurant=cls.shop_a,
-            role=CustomUser.Role.STAFF)
+            'staff_a', password='pw12345!', restaurant=cls.shop_a, role=CustomUser.Role.STAFF
+        )
         cls.owner_b = CustomUser.objects.create_user(
-            'owner_b', password='pw12345!', restaurant=cls.shop_b)
+            'owner_b', password='pw12345!', restaurant=cls.shop_b
+        )
         cls.no_shop = CustomUser.objects.create_user('lonely', password='pw12345!')
 
     def make(self, name='ข้าวสาร', shop=None, **kw):
         defaults = dict(unit='kg', price=Decimal('30'), stock_quantity=Decimal('5'))
         defaults.update(kw)
-        return Ingredient.objects.create(
-            restaurant=shop or self.shop_a, name=name, **defaults)
+        return Ingredient.objects.create(restaurant=shop or self.shop_a, name=name, **defaults)
 
     def payload(self, **kw):
-        data = {'name': 'น้ำปลา', 'barcode': '', 'unit': 'bottle',
-                'price': '25', 'stock_quantity': '0'}
+        data = {
+            'name': 'น้ำปลา',
+            'barcode': '',
+            'unit': 'bottle',
+            'price': '25',
+            'stock_quantity': '0',
+        }
         data.update(kw)
         return data
 
@@ -68,8 +73,8 @@ class CrudAndValidationTests(InventoryTestBase):
     def test_negative_price_and_stock_rejected(self):
         self.client.force_login(self.owner)
         resp = self.client.post(
-            reverse('inventory:create'),
-            self.payload(price='-1', stock_quantity='-5'))
+            reverse('inventory:create'), self.payload(price='-1', stock_quantity='-5')
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(Ingredient.objects.exists())
         self.assertContains(resp, 'ราคาต้องมากกว่า 0')
@@ -79,7 +84,9 @@ class CrudAndValidationTests(InventoryTestBase):
         item = self.make()
         self.client.force_login(self.owner)
         data = self.payload(
-            name=item.name, price='30', stock_quantity='-1',
+            name=item.name,
+            price='30',
+            stock_quantity='-1',
             expected_revision=item.revision,
         )
         resp = self.client.post(reverse('inventory:update', args=[item.pk]), data)
@@ -97,28 +104,26 @@ class CrudAndValidationTests(InventoryTestBase):
     def test_same_name_and_barcode_allowed_in_other_restaurant(self):
         self.make('Rice', barcode='111')
         self.client.force_login(self.owner_b)
-        self.client.post(reverse('inventory:create'),
-                         self.payload(name='Rice', barcode='111'))
+        self.client.post(reverse('inventory:create'), self.payload(name='Rice', barcode='111'))
         self.assertEqual(Ingredient.objects.filter(name='Rice').count(), 2)
 
     def test_duplicate_barcode_same_restaurant_rejected(self):
         self.make('Rice', barcode='111')
         self.client.force_login(self.owner)
-        resp = self.client.post(reverse('inventory:create'),
-                                self.payload(barcode='111'))
+        resp = self.client.post(reverse('inventory:create'), self.payload(barcode='111'))
         self.assertContains(resp, 'บาร์โค้ดนี้ถูกใช้')
 
     def test_reserved_prefix_rejected(self):
         self.client.force_login(self.owner)
-        resp = self.client.post(reverse('inventory:create'),
-                                self.payload(barcode='ING-000001'))
+        resp = self.client.post(reverse('inventory:create'), self.payload(barcode='ING-000001'))
         self.assertContains(resp, 'สงวนไว้ให้ระบบ')
 
     def test_create_with_initial_quantity_makes_first_lot(self):
         self.client.force_login(self.owner)
         future = (timezone.localdate() + timedelta(days=30)).isoformat()
-        self.client.post(reverse('inventory:create'),
-                         self.payload(stock_quantity='4', expiry_date=future))
+        self.client.post(
+            reverse('inventory:create'), self.payload(stock_quantity='4', expiry_date=future)
+        )
         item = Ingredient.objects.get(name='น้ำปลา')
         lot = item.stock_ins.get()
         self.assertEqual(lot.quantity, Decimal('4'))
@@ -129,8 +134,9 @@ class CrudAndValidationTests(InventoryTestBase):
     def test_past_expiry_rejected_on_create(self):
         self.client.force_login(self.owner)
         past = (timezone.localdate() - timedelta(days=1)).isoformat()
-        resp = self.client.post(reverse('inventory:create'),
-                                self.payload(stock_quantity='1', expiry_date=past))
+        resp = self.client.post(
+            reverse('inventory:create'), self.payload(stock_quantity='1', expiry_date=past)
+        )
         self.assertContains(resp, 'หมดอายุแล้ว')
         self.assertFalse(Ingredient.objects.exists())
 
@@ -138,7 +144,9 @@ class CrudAndValidationTests(InventoryTestBase):
         item = self.make()
         self.client.force_login(self.owner)
         data = self.payload(
-            name=item.name, price='31', stock_quantity='9',
+            name=item.name,
+            price='31',
+            stock_quantity='9',
             expected_revision=item.revision,
         )
         self.client.post(reverse('inventory:update', args=[item.pk]), data)
@@ -156,8 +164,11 @@ class IngredientEditRegressionTests(InventoryTestBase):
         response = self.client.get(reverse('inventory:update', args=[item.pk]))
         self.assertContains(response, 'name="expected_revision"')
         data = self.payload(
-            name=item.name, barcode=item.barcode, unit=item.unit,
-            price=str(item.price), stock_quantity=str(item.stock_quantity),
+            name=item.name,
+            barcode=item.barcode,
+            unit=item.unit,
+            price=str(item.price),
+            stock_quantity=str(item.stock_quantity),
             expected_revision=response.context['form']['expected_revision'].value(),
         )
         data.update(changes)
@@ -168,7 +179,8 @@ class IngredientEditRegressionTests(InventoryTestBase):
         original_barcode = item.barcode
         data = self.open_edit(item, name='Rice renamed', price='31')
         response = self.client.post(
-            reverse('inventory:update', args=[item.pk]), data,
+            reverse('inventory:update', args=[item.pk]),
+            data,
         )
         self.assertRedirects(response, reverse('inventory:detail', args=[item.pk]))
         item.refresh_from_db()
@@ -182,7 +194,8 @@ class IngredientEditRegressionTests(InventoryTestBase):
         item = self.make(barcode='555')
         data = self.open_edit(item, barcode='ING-999999')
         response = self.client.post(
-            reverse('inventory:update', args=[item.pk]), data,
+            reverse('inventory:update', args=[item.pk]),
+            data,
         )
         self.assertContains(response, 'สงวนไว้ให้ระบบ')
         item.refresh_from_db()
@@ -194,7 +207,8 @@ class IngredientEditRegressionTests(InventoryTestBase):
         self.make(name='Other', barcode='666')
         data = self.open_edit(item, barcode='666')
         response = self.client.post(
-            reverse('inventory:update', args=[item.pk]), data,
+            reverse('inventory:update', args=[item.pk]),
+            data,
         )
         self.assertContains(response, 'บาร์โค้ดนี้ถูกใช้')
         item.refresh_from_db()
@@ -204,7 +218,8 @@ class IngredientEditRegressionTests(InventoryTestBase):
         item = self.make(barcode='555')
         data = self.open_edit(item, barcode='')
         response = self.client.post(
-            reverse('inventory:update', args=[item.pk]), data,
+            reverse('inventory:update', args=[item.pk]),
+            data,
         )
         self.assertEqual(response.status_code, 302)
         item.refresh_from_db()
@@ -214,10 +229,12 @@ class IngredientEditRegressionTests(InventoryTestBase):
         item = self.make()
         data = self.open_edit(item, price='31')
         self.client.post(
-            reverse('inventory:stock_in', args=[item.pk]), {'quantity': '3'},
+            reverse('inventory:stock_in', args=[item.pk]),
+            {'quantity': '3'},
         )
         response = self.client.post(
-            reverse('inventory:update', args=[item.pk]), data,
+            reverse('inventory:update', args=[item.pk]),
+            data,
         )
         self.assertContains(response, 'กรุณาโหลดหน้าใหม่ก่อนบันทึก')
         item.refresh_from_db()
@@ -232,10 +249,12 @@ class IngredientEditRegressionTests(InventoryTestBase):
         item = self.make(barcode='555')
         data = self.open_edit(item, price='31')
         self.client.post(
-            reverse('inventory:scan'), {'barcode': '555', 'quick_mode': 'on'},
+            reverse('inventory:scan'),
+            {'barcode': '555', 'quick_mode': 'on'},
         )
         response = self.client.post(
-            reverse('inventory:update', args=[item.pk]), data,
+            reverse('inventory:update', args=[item.pk]),
+            data,
         )
         self.assertContains(response, 'กรุณาโหลดหน้าใหม่ก่อนบันทึก')
         item.refresh_from_db()
@@ -251,7 +270,8 @@ class IngredientEditRegressionTests(InventoryTestBase):
         url = reverse('inventory:update', args=[item.pk])
         self.assertEqual(self.client.post(url, first).status_code, 302)
         self.assertContains(
-            self.client.post(url, second), 'กรุณาโหลดหน้าใหม่ก่อนบันทึก',
+            self.client.post(url, second),
+            'กรุณาโหลดหน้าใหม่ก่อนบันทึก',
         )
         item.refresh_from_db()
         self.assertEqual(item.price, Decimal('31'))
@@ -273,11 +293,14 @@ class IngredientEditRegressionTests(InventoryTestBase):
             return valid
 
         with patch.object(
-            IngredientForm, 'is_valid', autospec=True,
+            IngredientForm,
+            'is_valid',
+            autospec=True,
             side_effect=receive_after_validation,
         ):
             response = self.client.post(
-                reverse('inventory:update', args=[item.pk]), data,
+                reverse('inventory:update', args=[item.pk]),
+                data,
             )
         self.assertContains(response, 'กรุณาโหลดหน้าใหม่ก่อนบันทึก')
         item.refresh_from_db()
@@ -290,7 +313,8 @@ class IngredientEditRegressionTests(InventoryTestBase):
         data = self.open_edit(item, price='31')
         del data['expected_revision']
         response = self.client.post(
-            reverse('inventory:update', args=[item.pk]), data,
+            reverse('inventory:update', args=[item.pk]),
+            data,
         )
         self.assertContains(response, 'กรุณาโหลดหน้าใหม่ก่อนบันทึก')
         item.refresh_from_db()
@@ -308,7 +332,8 @@ class StockLimitRegressionTests(InventoryTestBase):
         item = self.make(stock_quantity=self.maximum - Decimal('0.001'))
         response = self.client.post(
             reverse('inventory:stock_in', args=[item.pk]),
-            {'quantity': '0.001'}, follow=True,
+            {'quantity': '0.001'},
+            follow=True,
         )
         self.assertEqual(response.status_code, 200)
         item.refresh_from_db()
@@ -320,7 +345,8 @@ class StockLimitRegressionTests(InventoryTestBase):
         item = self.make(stock_quantity=self.maximum)
         response = self.client.post(
             reverse('inventory:stock_in', args=[item.pk]),
-            {'quantity': '0.001'}, follow=True,
+            {'quantity': '0.001'},
+            follow=True,
         )
         self.assertContains(response, 'ปริมาณคงเหลือรวมต้องไม่เกิน')
         item.refresh_from_db()
@@ -333,7 +359,8 @@ class StockLimitRegressionTests(InventoryTestBase):
         item = self.make(barcode='555', stock_quantity=self.maximum - 1)
         response = self.client.post(
             reverse('inventory:scan'),
-            {'barcode': '555', 'quick_mode': 'on'}, follow=True,
+            {'barcode': '555', 'quick_mode': 'on'},
+            follow=True,
         )
         self.assertEqual(response.status_code, 200)
         item.refresh_from_db()
@@ -345,7 +372,8 @@ class StockLimitRegressionTests(InventoryTestBase):
         item = self.make(barcode='555', stock_quantity=self.maximum)
         response = self.client.post(
             reverse('inventory:scan'),
-            {'barcode': '555', 'quick_mode': 'on'}, follow=True,
+            {'barcode': '555', 'quick_mode': 'on'},
+            follow=True,
         )
         self.assertContains(response, 'ปริมาณคงเหลือรวมต้องไม่เกิน')
         item.refresh_from_db()
@@ -367,7 +395,9 @@ class StockLimitRegressionTests(InventoryTestBase):
     def test_lot_failure_rolls_back_stock_and_revision(self):
         item = self.make()
         with patch.object(
-            StockIn.objects, 'create', side_effect=RuntimeError('lot failed'),
+            StockIn.objects,
+            'create',
+            side_effect=RuntimeError('lot failed'),
         ):
             with self.assertRaisesMessage(RuntimeError, 'lot failed'):
                 _add_stock(self.shop_a, item.pk, Decimal('3'), self.owner)
@@ -385,8 +415,7 @@ class TenantIsolationTests(InventoryTestBase):
         for name in ('detail', 'update', 'delete'):
             resp = self.client.get(reverse(f'inventory:{name}', args=[item.pk]))
             self.assertEqual(resp.status_code, 404, name)
-        resp = self.client.post(reverse('inventory:stock_in', args=[item.pk]),
-                                {'quantity': '3'})
+        resp = self.client.post(reverse('inventory:stock_in', args=[item.pk]), {'quantity': '3'})
         self.assertEqual(resp.status_code, 404)
         item.refresh_from_db()
         self.assertEqual(item.stock_quantity, Decimal('5'))
@@ -394,8 +423,7 @@ class TenantIsolationTests(InventoryTestBase):
     def test_scan_does_not_find_other_restaurants_barcode(self):
         self.make(barcode='999')
         self.client.force_login(self.owner_b)
-        resp = self.client.post(reverse('inventory:scan'),
-                                {'barcode': '999', 'quick_mode': 'on'})
+        resp = self.client.post(reverse('inventory:scan'), {'barcode': '999', 'quick_mode': 'on'})
         self.assertIn('not_found=999', resp.url)
         self.assertEqual(StockIn.objects.count(), 0)
 
@@ -404,8 +432,9 @@ class StockInTests(InventoryTestBase):
     def test_stock_in_adds_and_creates_lot(self):
         item = self.make()
         self.client.force_login(self.owner)
-        resp = self.client.post(reverse('inventory:stock_in', args=[item.pk]),
-                                {'quantity': '3'}, follow=True)
+        resp = self.client.post(
+            reverse('inventory:stock_in', args=[item.pk]), {'quantity': '3'}, follow=True
+        )
         item.refresh_from_db()
         self.assertEqual(item.stock_quantity, Decimal('8'))
         lot = item.stock_ins.get()
@@ -416,8 +445,7 @@ class StockInTests(InventoryTestBase):
         item = self.make()
         self.client.force_login(self.owner)
         for bad in ('0', '-2', ''):
-            self.client.post(reverse('inventory:stock_in', args=[item.pk]),
-                             {'quantity': bad})
+            self.client.post(reverse('inventory:stock_in', args=[item.pk]), {'quantity': bad})
         item.refresh_from_db()
         self.assertEqual(item.stock_quantity, Decimal('5'))
         self.assertFalse(StockIn.objects.exists())
@@ -426,25 +454,29 @@ class StockInTests(InventoryTestBase):
         item = self.make()
         self.client.force_login(self.owner)
         past = (timezone.localdate() - timedelta(days=1)).isoformat()
-        self.client.post(reverse('inventory:stock_in', args=[item.pk]),
-                         {'quantity': '2', 'expiry_date': past})
+        self.client.post(
+            reverse('inventory:stock_in', args=[item.pk]), {'quantity': '2', 'expiry_date': past}
+        )
         self.assertFalse(StockIn.objects.exists())
 
     def test_row_form_next_redirect_is_safe(self):
         item = self.make()
         self.client.force_login(self.owner)
-        resp = self.client.post(reverse('inventory:stock_in', args=[item.pk]),
-                                {'quantity': '1', 'next': 'https://evil.example/'})
+        resp = self.client.post(
+            reverse('inventory:stock_in', args=[item.pk]),
+            {'quantity': '1', 'next': 'https://evil.example/'},
+        )
         self.assertEqual(resp.url, reverse('inventory:detail', args=[item.pk]))
-        resp = self.client.post(reverse('inventory:stock_in', args=[item.pk]),
-                                {'quantity': '1', 'next': '/inventory/?q=x'})
+        resp = self.client.post(
+            reverse('inventory:stock_in', args=[item.pk]),
+            {'quantity': '1', 'next': '/inventory/?q=x'},
+        )
         self.assertEqual(resp.url, '/inventory/?q=x')
 
     def test_decimal_quantity(self):
         item = self.make(unit='kg', stock_quantity=Decimal('1.5'))
         self.client.force_login(self.owner)
-        self.client.post(reverse('inventory:stock_in', args=[item.pk]),
-                         {'quantity': '0.25'})
+        self.client.post(reverse('inventory:stock_in', args=[item.pk]), {'quantity': '0.25'})
         item.refresh_from_db()
         self.assertEqual(item.stock_quantity, Decimal('1.75'))
 
@@ -452,8 +484,7 @@ class StockInTests(InventoryTestBase):
 class ScanTests(InventoryTestBase):
     def test_unknown_barcode_does_not_crash(self):
         self.client.force_login(self.owner)
-        resp = self.client.post(reverse('inventory:scan'),
-                                {'barcode': 'nope'}, follow=True)
+        resp = self.client.post(reverse('inventory:scan'), {'barcode': 'nope'}, follow=True)
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'ไม่พบวัตถุดิบ')
         self.assertContains(resp, 'barcode=nope')
@@ -461,10 +492,8 @@ class ScanTests(InventoryTestBase):
     def test_normal_mode_goes_to_detail(self):
         item = self.make(barcode='555')
         self.client.force_login(self.owner)
-        resp = self.client.post(reverse('inventory:scan'),
-                                {'barcode': ' 555 '})
-        self.assertEqual(
-            resp.url, reverse('inventory:detail', args=[item.pk]) + '#stock-in')
+        resp = self.client.post(reverse('inventory:scan'), {'barcode': ' 555 '})
+        self.assertEqual(resp.url, reverse('inventory:detail', args=[item.pk]) + '#stock-in')
         item.refresh_from_db()
         self.assertEqual(item.stock_quantity, Decimal('5'))
 
@@ -483,24 +512,23 @@ class ScanTests(InventoryTestBase):
         item = self.make()
         self.assertTrue(item.barcode.startswith('ING-'))
         self.client.force_login(self.owner)
-        self.client.post(reverse('inventory:scan'),
-                         {'barcode': item.barcode, 'quick_mode': 'on'})
+        self.client.post(reverse('inventory:scan'), {'barcode': item.barcode, 'quick_mode': 'on'})
         item.refresh_from_db()
         self.assertEqual(item.stock_quantity, Decimal('6'))
 
     def test_quick_mode_ignores_client_quantity_and_adds_one(self):
         item = self.make(barcode='555')
         self.client.force_login(self.owner)
-        self.client.post(reverse('inventory:scan'),
-                         {'barcode': '555', 'quantity': '99', 'quick_mode': 'on'})
+        self.client.post(
+            reverse('inventory:scan'), {'barcode': '555', 'quantity': '99', 'quick_mode': 'on'}
+        )
         item.refresh_from_db()
         self.assertEqual(item.stock_quantity, Decimal('6'))
 
     def test_quick_mode_preference_is_remembered(self):
         self.make(barcode='555')
         self.client.force_login(self.owner)
-        self.client.post(reverse('inventory:scan'),
-                         {'barcode': '555', 'quick_mode': 'on'})
+        self.client.post(reverse('inventory:scan'), {'barcode': '555', 'quick_mode': 'on'})
         resp = self.client.get(reverse('inventory:list'))
         self.assertContains(resp, 'checked')
 
@@ -525,9 +553,13 @@ class DeleteAndListTests(InventoryTestBase):
         a = self.make('ข้าวสาร')
         self.make('น้ำตาล')
         today = timezone.localdate()
-        StockIn.objects.create(restaurant=self.shop_a, ingredient=a,
-                               quantity=1, remaining_quantity=1,
-                               expiry_date=today + timedelta(days=3))
+        StockIn.objects.create(
+            restaurant=self.shop_a,
+            ingredient=a,
+            quantity=1,
+            remaining_quantity=1,
+            expiry_date=today + timedelta(days=3),
+        )
         self.client.force_login(self.owner)
         resp = self.client.get(reverse('inventory:list'), {'q': 'ข้าว'})
         self.assertContains(resp, 'ข้าวสาร')
@@ -537,8 +569,12 @@ class DeleteAndListTests(InventoryTestBase):
     def test_expired_lot_with_no_remaining_is_ignored(self):
         a = self.make('ข้าวสาร')
         StockIn.objects.create(
-            restaurant=self.shop_a, ingredient=a, quantity=1, remaining_quantity=0,
-            expiry_date=timezone.localdate() - timedelta(days=5))
+            restaurant=self.shop_a,
+            ingredient=a,
+            quantity=1,
+            remaining_quantity=0,
+            expiry_date=timezone.localdate() - timedelta(days=5),
+        )
         self.client.force_login(self.owner)
         self.assertNotContains(self.client.get(reverse('inventory:list')), 'หมดอายุแล้ว')
 
@@ -548,4 +584,5 @@ class DeleteAndListTests(InventoryTestBase):
         self.client.force_login(self.owner)
         self.assertEqual(len(self.client.get(reverse('inventory:list')).context['page']), 20)
         self.assertEqual(
-            len(self.client.get(reverse('inventory:list'), {'page': 2}).context['page']), 5)
+            len(self.client.get(reverse('inventory:list'), {'page': 2}).context['page']), 5
+        )

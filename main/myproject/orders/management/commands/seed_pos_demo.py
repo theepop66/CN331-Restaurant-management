@@ -33,7 +33,9 @@ class Command(BaseCommand):
         user.restaurant = restaurant
         user.save()
 
-        self.stdout.write(self.style.SUCCESS(f'Created/Updated Owner user: owner (password: password123)'))
+        self.stdout.write(
+            self.style.SUCCESS('Created/Updated Owner user: owner (password: password123)')
+        )
 
         # 3. Create Ingredients
         today = date.today()
@@ -65,11 +67,16 @@ class Command(BaseCommand):
         )
 
         # Ensure quantities are set for demo
-        rice.stock_quantity = Decimal('10.000'); rice.save()
-        egg.stock_quantity = Decimal('30.000'); egg.save()
-        pork.stock_quantity = Decimal('5.000'); pork.save()
-        basil.stock_quantity = Decimal('1.000'); basil.save()
-        beef_out.stock_quantity = Decimal('0.000'); beef_out.save()
+        rice.stock_quantity = Decimal('10.000')
+        rice.save()
+        egg.stock_quantity = Decimal('30.000')
+        egg.save()
+        pork.stock_quantity = Decimal('5.000')
+        pork.save()
+        basil.stock_quantity = Decimal('1.000')
+        basil.save()
+        beef_out.stock_quantity = Decimal('0.000')
+        beef_out.save()
 
         # Create StockIn lots for FEFO demo
         StockIn.objects.get_or_create(
@@ -143,6 +150,10 @@ class Command(BaseCommand):
         menu4.price = Decimal('380.00')
         menu4.save()
         menu4.recipe_items.all().delete()
-        RecipeItem.objects.create(menu_item=menu4, ingredient=beef_out, quantity_used=Decimal('0.200'))
+        RecipeItem.objects.create(
+            menu_item=menu4, ingredient=beef_out, quantity_used=Decimal('0.200')
+        )
 
-        self.stdout.write(self.style.SUCCESS('Successfully seeded demo restaurant, ingredients, and menus!'))
+        self.stdout.write(
+            self.style.SUCCESS('Successfully seeded demo restaurant, ingredients, and menus!')
+        )

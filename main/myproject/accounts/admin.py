@@ -18,8 +18,6 @@ class RestaurantAdmin(RestaurantOwnerAdmin):
 
 @admin.register(CustomUser)
 class CustomUserAdmin(RestaurantOwnerAdmin, UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
-        ('ข้อมูลร้าน (Tenant)', {'fields': ('restaurant', 'role')}),
-    )
+    fieldsets = UserAdmin.fieldsets + (('ข้อมูลร้าน (Tenant)', {'fields': ('restaurant', 'role')}),)
     list_display = ['username', 'email', 'restaurant', 'role', 'is_staff']
     list_filter = ['role']

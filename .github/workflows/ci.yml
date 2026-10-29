@@ -1,0 +1,71 @@
+name: CN331 Django CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: ci-temporary-secret-key-cn331
+      DEBUG: "False"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: 'main/requirements*.txt'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r main/requirements-dev.txt
+
+      - name: Code format check (Black)
+        run: black --check --diff .
+
+      - name: Code style lint (Flake8)
+        run: flake8 .
+
+      - name: Security scan (Bandit)
+        run: bandit -r main/myproject -x '*/tests/*,*/tests.py,*/test_*.py,*/migrations/*'
+
+      - name: Static type check (Mypy)
+        run: python -m mypy --config-file mypy.ini
+
+      - name: Ruff code quality check
+        run: python -m ruff check .
+
+      - name: Django system and migration sanity check
+        working-directory: main/myproject
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Run test suite with Coverage gate (>= 80%)
+        working-directory: main/myproject
+        run: |
+          python -m coverage run --rcfile=../../.coveragerc manage.py test
+          python -m coverage report -m --rcfile=../../.coveragerc
+
+      - name: Generate HTML coverage report
+        if: always()
+        working-directory: main/myproject
+        run: python -m coverage html --rcfile=../../.coveragerc
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report
+          path: main/myproject/htmlcov/
+          retention-days: 14

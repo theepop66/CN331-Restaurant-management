@@ -40,7 +40,7 @@ class OrdersSelectorsTestCase(TestCase):
             stock_quantity=Decimal('0.050'),  # 50g
         )
 
-        # Menu 1: Basil Crispy Pork (Pork 0.1 kg -> 10 servings max; Basil 0.02 kg -> 2.5 = 2 servings max!)
+        # Menu 1: Basil Crispy Pork (Pork 0.1 kg -> 10 servings; Basil 0.02 kg -> 2 servings)
         # The bottleneck is basil (only 2 servings!)
         cls.basil_pork = MenuItem.objects.create(
             restaurant=cls.restaurant,

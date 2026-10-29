@@ -32,7 +32,8 @@ def _fmt(value):
 def _safe_next(request, default):
     target = request.POST.get('next') or request.GET.get('next')
     if target and url_has_allowed_host_and_scheme(
-        target, allowed_hosts={request.get_host()},
+        target,
+        allowed_hosts={request.get_host()},
         require_https=request.is_secure(),
     ):
         return target
@@ -45,26 +46,26 @@ def _add_stock(restaurant, ingredient_id, quantity, user, expiry_date=None):
     คืนค่า (ingredient, ยอดเดิม, ยอดใหม่, ล็อต)
     """
     field = Ingredient._meta.get_field('stock_quantity')
-    maximum = (
-        Decimal(10) ** (field.max_digits - field.decimal_places)
-        - Decimal(1).scaleb(-field.decimal_places)
+    maximum = Decimal(10) ** (field.max_digits - field.decimal_places) - Decimal(1).scaleb(
+        -field.decimal_places
     )
     with transaction.atomic():
         # Check and increment together; SQLite does not support row locks.
         updated = Ingredient.objects.filter(
-            pk=ingredient_id, restaurant=restaurant,
+            pk=ingredient_id,
+            restaurant=restaurant,
             stock_quantity__lte=maximum - quantity,
         ).update(
             stock_quantity=F('stock_quantity') + quantity,
-            revision=F('revision') + 1, updated_at=timezone.now(),
+            revision=F('revision') + 1,
+            updated_at=timezone.now(),
         )
         ingredient = Ingredient.objects.get(
-            pk=ingredient_id, restaurant=restaurant,
+            pk=ingredient_id,
+            restaurant=restaurant,
         )
         if not updated:
-            raise ValidationError(
-                f'ปริมาณคงเหลือรวมต้องไม่เกิน {_fmt(maximum)}'
-            )
+            raise ValidationError(f'ปริมาณคงเหลือรวมต้องไม่เกิน {_fmt(maximum)}')
         old = ingredient.stock_quantity - quantity
         lot = StockIn.objects.create(
             restaurant=restaurant,
@@ -78,10 +79,7 @@ def _add_stock(restaurant, ingredient_id, quantity, user, expiry_date=None):
 
 
 def _stock_message(ingredient, old, new):
-    return (
-        f'{ingredient.name}: {_fmt(old)} → {_fmt(new)} '
-        f'{ingredient.get_unit_display()}'
-    )
+    return f'{ingredient.name}: {_fmt(old)} → {_fmt(new)} ' f'{ingredient.get_unit_display()}'
 
 
 @restaurant_required
@@ -108,9 +106,7 @@ def ingredient_list(request, restaurant):
     for item in page:
         expiry = item.nearest_expiry
         item.expiry_state = (
-            'expired' if expiry and expiry < today
-            else 'soon' if expiry and expiry <= soon
-            else ''
+            'expired' if expiry and expiry < today else 'soon' if expiry and expiry <= soon else ''
         )
 
     stats = {'total': 0, 'out': 0, 'soon': 0, 'expired': 0}
@@ -122,19 +118,25 @@ def ingredient_list(request, restaurant):
         elif expiry and expiry <= soon:
             stats['soon'] += 1
 
-    scan_form = ScanForm(initial={
-        'quick_mode': request.session.get('quick_scan', False),
-    })
+    scan_form = ScanForm(
+        initial={
+            'quick_mode': request.session.get('quick_scan', False),
+        }
+    )
     not_found = request.GET.get('not_found', '').strip()
-    return render(request, 'inventory/list.html', {
-        'page': page,
-        'stats': stats,
-        'q': q,
-        'scan_form': scan_form,
-        'not_found': not_found,
-        'not_found_query': urlencode({'barcode': not_found}),
-        'expiring_days': EXPIRING_SOON_DAYS,
-    })
+    return render(
+        request,
+        'inventory/list.html',
+        {
+            'page': page,
+            'stats': stats,
+            'q': q,
+            'scan_form': scan_form,
+            'not_found': not_found,
+            'not_found_query': urlencode({'barcode': not_found}),
+            'expiring_days': EXPIRING_SOON_DAYS,
+        },
+    )
 
 
 @restaurant_required
@@ -164,11 +166,15 @@ def ingredient_create(request, restaurant):
             restaurant=restaurant,
             initial={'barcode': request.GET.get('barcode', '').strip()},
         )
-    return render(request, 'inventory/form.html', {
-        'form': form,
-        'title': 'เพิ่มวัตถุดิบ',
-        'names': _names(restaurant),
-    })
+    return render(
+        request,
+        'inventory/form.html',
+        {
+            'form': form,
+            'title': 'เพิ่มวัตถุดิบ',
+            'names': _names(restaurant),
+        },
+    )
 
 
 @restaurant_required
@@ -192,12 +198,16 @@ def ingredient_update(request, restaurant, pk):
                 )
     else:
         form = IngredientForm(instance=ingredient, restaurant=restaurant)
-    return render(request, 'inventory/form.html', {
-        'form': form,
-        'title': f'แก้ไข: {ingredient.name}',
-        'ingredient': ingredient,
-        'names': _names(restaurant),
-    })
+    return render(
+        request,
+        'inventory/form.html',
+        {
+            'form': form,
+            'title': f'แก้ไข: {ingredient.name}',
+            'ingredient': ingredient,
+            'names': _names(restaurant),
+        },
+    )
 
 
 @restaurant_required
@@ -209,16 +219,20 @@ def ingredient_detail(request, restaurant, pk):
     lots = list(ingredient.stock_ins.select_related('received_by'))
     for lot in lots:
         lot.expiry_state = (
-            'expired' if lot.expiry_date and lot.expiry_date < today
-            else 'soon' if lot.expiry_date and lot.expiry_date <= soon
-            else ''
+            'expired'
+            if lot.expiry_date and lot.expiry_date < today
+            else 'soon' if lot.expiry_date and lot.expiry_date <= soon else ''
         )
-    return render(request, 'inventory/detail.html', {
-        'ingredient': ingredient,
-        'lots': lots,
-        'stock_in_form': StockInForm(),
-        'can_delete': request.user.role == CustomUser.Role.OWNER,
-    })
+    return render(
+        request,
+        'inventory/detail.html',
+        {
+            'ingredient': ingredient,
+            'lots': lots,
+            'stock_in_form': StockInForm(),
+            'can_delete': request.user.role == CustomUser.Role.OWNER,
+        },
+    )
 
 
 @restaurant_required
@@ -234,10 +248,14 @@ def ingredient_delete(request, restaurant, pk):
         ingredient.delete()
         messages.success(request, f'🗑️ ลบวัตถุดิบ "{name}" แล้ว')
         return redirect('inventory:list')
-    return render(request, 'inventory/confirm_delete.html', {
-        'ingredient': ingredient,
-        'lot_count': ingredient.stock_ins.count(),
-    })
+    return render(
+        request,
+        'inventory/confirm_delete.html',
+        {
+            'ingredient': ingredient,
+            'lot_count': ingredient.stock_ins.count(),
+        },
+    )
 
 
 @require_POST
@@ -250,8 +268,11 @@ def stock_in(request, restaurant, pk):
     if form.is_valid():
         try:
             ingredient, old, new, lot = _add_stock(
-                restaurant, ingredient.pk, form.cleaned_data['quantity'],
-                request.user, form.cleaned_data.get('expiry_date'),
+                restaurant,
+                ingredient.pk,
+                form.cleaned_data['quantity'],
+                request.user,
+                form.cleaned_data.get('expiry_date'),
             )
         except ValidationError as error:
             for text in error.messages:
@@ -290,7 +311,8 @@ def scan(request, restaurant):
     quick = form.cleaned_data['quick_mode']
 
     ingredient = Ingredient.objects.filter(
-        restaurant=restaurant, barcode=barcode,
+        restaurant=restaurant,
+        barcode=barcode,
     ).first()
     if ingredient is None:
         return redirect(f"{reverse('inventory:list')}?{urlencode({'not_found': barcode})}")
@@ -298,7 +320,10 @@ def scan(request, restaurant):
     if quick:
         try:
             ingredient, old, new, lot = _add_stock(
-                restaurant, ingredient.pk, QUICK_SCAN_STEP, request.user,
+                restaurant,
+                ingredient.pk,
+                QUICK_SCAN_STEP,
+                request.user,
             )
         except ValidationError as error:
             for text in error.messages:

@@ -75,7 +75,9 @@ def checkout_order(
             line_requirements.append((line, menu, reqs))
 
             for ing_id, needed_qty in reqs.items():
-                total_needed_by_ing[ing_id] = total_needed_by_ing.get(ing_id, Decimal('0')) + needed_qty
+                total_needed_by_ing[ing_id] = (
+                    total_needed_by_ing.get(ing_id, Decimal('0')) + needed_qty
+                )
 
         # Verify all ingredients exist and belong to the restaurant
         ingredients_by_id = Ingredient.objects.in_bulk(list(total_needed_by_ing.keys()))
