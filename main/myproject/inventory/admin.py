@@ -15,8 +15,15 @@ class IngredientAdmin(RestaurantOwnerAdmin):
 
 @admin.register(StockIn)
 class StockInAdmin(RestaurantOwnerAdmin):
-    list_display = ['lot_code', 'ingredient', 'restaurant', 'quantity',
-                    'remaining_quantity', 'expiry_date', 'received_at']
+    list_display = [
+        'lot_code',
+        'ingredient',
+        'restaurant',
+        'quantity',
+        'remaining_quantity',
+        'expiry_date',
+        'received_at',
+    ]
     list_filter = ['expiry_date']
     search_fields = ['lot_code', 'ingredient__name']
 

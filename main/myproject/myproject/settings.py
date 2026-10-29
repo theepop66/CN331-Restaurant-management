@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 from django.contrib.messages import constants as message_constants
@@ -22,10 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3owx)z56l5xs8w!353_45d&e(2tjd!8-$a&b5b+t6t)lj)df&b'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-dev-fallback-key-cn331')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -39,12 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     # --- UC-01: local apps ---
-    'accounts',            # UC-01 (คนที่ 1) — auth, tenant, layout
-    'inventory',           # UC-02 (คนที่ 2) — คลังวัตถุดิบ + รับเข้าสต็อก
-    'menus',               # US-03 / UC-03 — menus and recipe BOM
-    # 'orders',            # UC-04 (คนที่ 4)
+    'accounts',  # UC-01 (คนที่ 1) — auth, tenant, layout
+    'inventory',  # UC-02 (คนที่ 2) — คลังวัตถุดิบ + รับเข้าสต็อก
+    'menus',  # US-03 / UC-03 — menus and recipe BOM
+    'orders',  # UC-04 (คนที่ 4)
     # 'analytics',         # UC-05, UC-06 (คนที่ 5)
 ]
 

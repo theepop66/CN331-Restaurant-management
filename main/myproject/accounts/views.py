@@ -36,10 +36,14 @@ def register_view(request):
         restaurant_form = RestaurantForm()
         user_form = CustomUserCreationForm()
 
-    return render(request, 'accounts/register.html', {
-        'restaurant_form': restaurant_form,
-        'user_form': user_form,
-    })
+    return render(
+        request,
+        'accounts/register.html',
+        {
+            'restaurant_form': restaurant_form,
+            'user_form': user_form,
+        },
+    )
 
 
 def login_view(request):
@@ -84,6 +88,10 @@ def home_view(request):
     Deliberately named "home" (not "dashboard") to leave the
     `analytics:dashboard` route free for UC-06 later in the project.
     """
-    return render(request, 'accounts/home.html', {
-        'restaurant': request.user.restaurant,
-    })
+    return render(
+        request,
+        'accounts/home.html',
+        {
+            'restaurant': request.user.restaurant,
+        },
+    )

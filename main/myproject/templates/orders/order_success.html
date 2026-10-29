@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}คำสั่งซื้อสำเร็จ #{{ order.pk }} · {{ restaurant.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-success">
+            <div class="card-header bg-success text-white py-3 text-center">
+                <h3 class="h4 mb-1">บันทึกการขายสำเร็จ</h3>
+                <p class="mb-0 small text-white-50">คำสั่งซื้อได้รับการบันทึกและตัดสต็อกเรียบร้อยแล้ว</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="row mb-4">
+                    <div class="col-sm-6">
+                        <h5 class="text-muted small text-uppercase mb-1">เลขที่คำสั่งซื้อ</h5>
+                        <p class="fs-5 fw-bold mb-0">#{{ order.pk }}</p>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                        <h5 class="text-muted small text-uppercase mb-1">วันและเวลา</h5>
+                        <p class="mb-0">{{ order.created_at|date:"d M Y, H:i:s" }}</p>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>รายการอาหาร</th>
+                                <th class="text-end" style="width: 120px;">ราคา/จาน</th>
+                                <th class="text-center" style="width: 100px;">จำนวน</th>
+                                <th class="text-end" style="width: 140px;">รวม (บาท)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-semibold">{{ item.name_snapshot }}</span>
+                                    </td>
+                                    <td class="text-end">{{ item.unit_price|floatformat:2 }} ฿</td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-end fw-bold">{{ item.line_total|floatformat:2 }} ฿</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="3" class="text-end fw-bold fs-5">ยอดรวมสุทธิ</td>
+                                <td class="text-end fw-bold fs-5 text-success">{{ order.total_amount|floatformat:2 }} ฿</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Stock Deduction Audit Log Accordion -->
+                <div class="accordion mb-4" id="deductionAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingDeductions">
+                            <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDeductions" aria-expanded="false" aria-controls="collapseDeductions">
+                                ดูประวัติการตัดสต็อกวัตถุดิบ (Audit Log)
+                            </button>
+                        </h2>
+                        <div id="collapseDeductions" class="accordion-collapse collapse" aria-labelledby="headingDeductions" data-bs-parent="#deductionAccordion">
+                            <div class="accordion-body p-0">
+                                <ul class="list-group list-group-flush small">
+                                    {% for item in order.items.all %}
+                                        {% for ded in item.stock_deductions.all %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="fw-semibold">{{ item.name_snapshot }}</span> ➜ 
+                                                    <span>{{ ded.ingredient.name }}</span>
+                                                    {% if ded.lot %}
+                                                        <span class="badge bg-secondary-subtle text-secondary-emphasis ms-1">{{ ded.lot.lot_code|default:"LOT" }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <span class="text-danger fw-bold">-{{ ded.quantity }} {{ ded.ingredient.get_unit_display }}</span>
+                                            </li>
+                                        {% empty %}
+                                            <li class="list-group-item text-muted">ไม่มีรายการตัดสต็อก</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'orders:pos' %}" class="btn btn-primary btn-lg">
+                        ทำรายการขายใหม่ (กลับไป Mini-POS)
+                    </a>
+                    <a href="{% url 'inventory:list' %}" class="btn btn-outline-secondary">
+                        ตรวจสอบคลังวัตถุดิบ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

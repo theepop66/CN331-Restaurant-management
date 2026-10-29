@@ -15,14 +15,18 @@ class RestaurantForm(forms.ModelForm):
             'address': 'ที่อยู่ร้าน',
         }
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'ชื่อร้าน',
-            }),
-            'address': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'ที่อยู่ร้าน (ไม่บังคับ)',
-            }),
+            'name': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'ชื่อร้าน',
+                }
+            ),
+            'address': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'ที่อยู่ร้าน (ไม่บังคับ)',
+                }
+            ),
         }
 
 
@@ -31,10 +35,12 @@ class CustomUserCreationForm(UserCreationForm):
 
     email = forms.EmailField(
         required=True,
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'name@example.com',
-        }),
+        widget=forms.EmailInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'name@example.com',
+            }
+        ),
     )
 
     class Meta(UserCreationForm.Meta):
@@ -43,18 +49,24 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'ชื่อผู้ใช้',
-        })
-        self.fields['password1'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'รหัสผ่าน',
-        })
-        self.fields['password2'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'ยืนยันรหัสผ่าน',
-        })
+        self.fields['username'].widget.attrs.update(
+            {
+                'class': 'form-control',
+                'placeholder': 'ชื่อผู้ใช้',
+            }
+        )
+        self.fields['password1'].widget.attrs.update(
+            {
+                'class': 'form-control',
+                'placeholder': 'รหัสผ่าน',
+            }
+        )
+        self.fields['password2'].widget.attrs.update(
+            {
+                'class': 'form-control',
+                'placeholder': 'ยืนยันรหัสผ่าน',
+            }
+        )
 
     def clean_email(self):
         email = self.cleaned_data['email']
@@ -68,12 +80,16 @@ class LoginForm(AuthenticationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'ชื่อผู้ใช้',
-            'autofocus': True,
-        })
-        self.fields['password'].widget.attrs.update({
-            'class': 'form-control',
-            'placeholder': 'รหัสผ่าน',
-        })
+        self.fields['username'].widget.attrs.update(
+            {
+                'class': 'form-control',
+                'placeholder': 'ชื่อผู้ใช้',
+                'autofocus': True,
+            }
+        )
+        self.fields['password'].widget.attrs.update(
+            {
+                'class': 'form-control',
+                'placeholder': 'รหัสผ่าน',
+            }
+        )
