@@ -29,11 +29,7 @@
                                         <h5 class="card-title h6 mb-0 text-truncate" title="{{ card.name }}">
                                             {{ card.name }}
                                         </h5>
-                                        {% if card.is_orderable %}
-                                            <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
-                                                เหลือ ~{{ card.max_servings }} จาน
-                                            </span>
-                                        {% else %}
+                                        {% if not card.is_orderable %}
                                             <span class="badge bg-danger text-white">
                                                 วัตถุดิบหมด
                                             </span>
@@ -182,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (current.quantity < max) {
                     current.quantity += 1;
                 } else {
-                    alert(`วัตถุดิบเพียงพอสำหรับสั่งได้สูงสุด ${max} จานในขณะนี้`);
+                    alert('วัตถุดิบไม่เพียงพอสำหรับสั่งเพิ่มได้ในขณะนี้');
                 }
             } else {
                 cart.set(id, { name, price, quantity: 1, max });
@@ -201,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item.quantity < item.max) {
                 item.quantity += 1;
             } else {
-                alert(`วัตถุดิบเพียงพอสำหรับสั่งได้สูงสุด ${item.max} จานในขณะนี้`);
+                alert('วัตถุดิบไม่เพียงพอสำหรับสั่งเพิ่มได้ในขณะนี้');
             }
             renderCart();
         } else if (e.target.classList.contains('btn-decrease')) {
