@@ -1,5 +1,5 @@
 [run]
-source = accounts,inventory,menus
+source = accounts,inventory,menus,orders
 omit =
     */migrations/*
     */tests.py
