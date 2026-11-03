@@ -81,12 +81,12 @@ class Ingredient(models.Model):
         validators=[MinValueValidator(Decimal('0'))],
     )
     par_level = models.DecimalField(
-        'จุดแจ้งเตือนสั่งซื้อซ้ำ',
+        'เตือนเมื่อเหลือไม่เกิน',
         max_digits=12,
         decimal_places=3,
         default=Decimal('0'),
         validators=[MinValueValidator(Decimal('0'))],
-        help_text='แจ้งเตือนเมื่อคงเหลือถึงหรือต่ำกว่าค่านี้; 0 คือยังไม่กำหนด',
+        help_text='ใช้หน่วยเดียวกับวัตถุดิบ ระบบจะแจ้งเตือนเมื่อเหลือเท่านี้หรือน้อยกว่า; ใส่ 0 หากยังไม่ตั้งจุดเตือน',
     )
     price = models.DecimalField(
         'ราคาต่อหน่วย',

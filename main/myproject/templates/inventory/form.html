@@ -50,4 +50,20 @@
         </div>
     </div>
 </div>
+<script>
+    (() => {
+        const unitSelect = document.getElementById('id_unit');
+        const thresholdLabel = document.querySelector('label[for="id_par_level"]');
+        if (!unitSelect || !thresholdLabel) return;
+
+        const updateThresholdUnit = () => {
+            const selected = unitSelect.options[unitSelect.selectedIndex];
+            const unitName = unitSelect.value ? selected.textContent.trim() : 'เลือกหน่วยก่อน';
+            thresholdLabel.textContent = `เตือนเมื่อเหลือไม่เกิน (${unitName})`;
+        };
+
+        unitSelect.addEventListener('change', updateThresholdUnit);
+        updateThresholdUnit();
+    })();
+</script>
 {% endblock %}

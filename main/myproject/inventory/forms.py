@@ -46,7 +46,7 @@ class IngredientForm(forms.ModelForm):
             'unit': 'หน่วย',
             'price': 'ราคาต่อหน่วย (บาท)',
             'stock_quantity': 'ปริมาณ',
-            'par_level': 'จุดแจ้งเตือนสั่งซื้อซ้ำ',
+            'par_level': 'เตือนเมื่อเหลือไม่เกิน',
         }
         widgets = {
             'name': forms.TextInput(
@@ -92,6 +92,10 @@ class IngredientForm(forms.ModelForm):
         self.restaurant = restaurant
         self.fields['unit'].choices = [('', 'เลือกหน่วย')] + list(Ingredient.Unit.choices)
         self.fields['price'].required = True
+        self.fields['par_level'].help_text = (
+            'ใช้หน่วยเดียวกับวัตถุดิบ ระบบจะแจ้งเตือนเมื่อเหลือเท่านี้หรือน้อยกว่า; '
+            'ใส่ 0 หากยังไม่ตั้งจุดเตือน'
+        )
         if self.instance.pk:
             # แก้ไขวัตถุดิบเดิม: ไม่มีช่องวันหมดอายุ (วันหมดอายุอยู่ที่ล็อต)
             del self.fields['expiry_date']

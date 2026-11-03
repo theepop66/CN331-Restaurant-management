@@ -90,6 +90,7 @@
                     </td>
                     <td class="num c-stock" data-label="คงเหลือ">
                         <span>{{ item.stock_quantity|floatformat:"-3" }} {{ item.get_unit_display }}{% if item.stock_quantity <= 0 %}<span class="chip chip-muted">หมด</span>{% endif %}</span>
+                        {% if item.par_level %}<span class="item-sub">เตือนเมื่อเหลือไม่เกิน {{ item.par_level|floatformat:"-3" }} {{ item.get_unit_display }}</span>{% endif %}
                     </td>
                     <td class="num c-price" data-label="ราคา/หน่วย">฿{{ item.price|floatformat:2 }}</td>
                     <td class="c-expiry" data-label="หมดอายุเร็วสุด">
