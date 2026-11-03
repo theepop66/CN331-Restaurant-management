@@ -52,7 +52,7 @@
         </tr>{% endfor %}
         {% for ingredient in low_stock %}{% if not ingredient.par_level %}<tr>
             <td>{{ ingredient.name }}</td><td class="text-end">{{ ingredient.stock_quantity }} {{ ingredient.get_unit_display }}</td>
-            <td colspan="2" class="text-end text-warning">กำหนดจุดสั่งซื้อซ้ำในหน้าคลังวัตถุดิบ</td>
+            <td colspan="2" class="text-end text-danger">กำหนดจุดสั่งซื้อซ้ำในหน้าคลังวัตถุดิบ</td>
         </tr>{% endif %}{% endfor %}
         {% if not low_stock %}<tr><td colspan="4" class="text-center text-muted">ยังไม่มีวัตถุดิบถึงจุดสั่งซื้อซ้ำ</td></tr>{% endif %}
         </tbody>
