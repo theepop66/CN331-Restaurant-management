@@ -3,7 +3,7 @@ from decimal import Decimal
 from django import forms
 from django.utils import timezone
 
-from .models import Ingredient, PAR_LEVEL_HELP_TEXT
+from .models import PAR_LEVEL_HELP_TEXT, Ingredient
 
 ZERO = Decimal('0')
 MIN_STOCK_IN = Decimal('0.001')

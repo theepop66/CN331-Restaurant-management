@@ -4,7 +4,7 @@ import json
 import os
 from datetime import timedelta
 from decimal import Decimal
-from http.client import HTTPSConnection, HTTPException
+from http.client import HTTPException, HTTPSConnection
 from urllib.parse import urlsplit, urlunsplit
 
 from django.db.models import Sum

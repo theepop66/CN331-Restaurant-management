@@ -1,5 +1,6 @@
-from accounts.decorators import restaurant_owner_required
 from django.shortcuts import render
+
+from accounts.decorators import restaurant_owner_required
 
 from .services import build_dashboard_data, get_ai_insights
 
