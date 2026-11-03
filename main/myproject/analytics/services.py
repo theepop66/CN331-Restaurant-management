@@ -4,8 +4,8 @@ import json
 import os
 from datetime import timedelta
 from decimal import Decimal
-from urllib.error import URLError
-from urllib.request import Request, urlopen
+from http.client import HTTPSConnection, HTTPException
+from urllib.parse import urlsplit, urlunsplit
 
 from django.db.models import Sum
 from django.utils import timezone
@@ -243,15 +243,32 @@ def get_ai_insights(restaurant, data):
         ],
         'temperature': 0.2,
     }
-    request = Request(
-        os.environ.get('OPENAI_API_URL', 'https://api.openai.com/v1/chat/completions'),
-        data=json.dumps(payload).encode('utf-8'),
-        headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
-        method='POST',
-    )
+    api_url = os.environ.get('OPENAI_API_URL', 'https://api.openai.com/v1/chat/completions')
+    parsed_url = urlsplit(api_url)
+    if (
+        parsed_url.scheme != 'https'
+        or not parsed_url.hostname
+        or parsed_url.username
+        or parsed_url.password
+    ):
+        return _rules_based_insights(data), 'rules'
+
+    connection = HTTPSConnection(parsed_url.hostname, parsed_url.port, timeout=8)
+    request_path = urlunsplit(('', '', parsed_url.path or '/', parsed_url.query, ''))
     try:
-        with urlopen(request, timeout=8) as response:
-            body = json.loads(response.read().decode('utf-8'))
+        connection.request(
+            'POST',
+            request_path,
+            body=json.dumps(payload).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json',
+            },
+        )
+        response = connection.getresponse()
+        if response.status < 200 or response.status >= 300:
+            return _rules_based_insights(data), 'rules'
+        body = json.loads(response.read().decode('utf-8'))
         content = body['choices'][0]['message']['content'].strip()
         if not content:
             raise ValueError('AI returned an empty response')
@@ -266,5 +283,7 @@ def get_ai_insights(restaurant, data):
         )
         AIInsight.objects.filter(pk__in=old_ids).delete()
         return content, 'openai'
-    except (URLError, TimeoutError, ValueError, KeyError, IndexError, json.JSONDecodeError):
+    except (HTTPException, OSError, TimeoutError, ValueError, KeyError, IndexError):
         return _rules_based_insights(data), 'rules'
+    finally:
+        connection.close()
