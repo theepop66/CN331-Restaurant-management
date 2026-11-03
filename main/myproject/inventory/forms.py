@@ -92,6 +92,7 @@ class IngredientForm(forms.ModelForm):
         self.restaurant = restaurant
         self.fields['unit'].choices = [('', 'เลือกหน่วย')] + list(Ingredient.Unit.choices)
         self.fields['price'].required = True
+        self.fields['par_level'].required = False
         self.fields['par_level'].help_text = PAR_LEVEL_HELP_TEXT
         if self.instance.pk:
             # แก้ไขวัตถุดิบเดิม: ไม่มีช่องวันหมดอายุ (วันหมดอายุอยู่ที่ล็อต)
@@ -135,6 +136,14 @@ class IngredientForm(forms.ModelForm):
         if price <= ZERO:
             raise forms.ValidationError('ราคาต้องมากกว่า 0')
         return price
+
+    def clean_par_level(self):
+        par_level = self.cleaned_data.get('par_level')
+        if par_level is not None:
+            return par_level
+        if self.instance.pk and 'par_level' not in self.data:
+            return self.instance.par_level
+        return ZERO
 
     def clean_stock_quantity(self):
         qty = self.cleaned_data.get('stock_quantity')
