@@ -93,8 +93,7 @@ class IngredientForm(forms.ModelForm):
         self.fields['unit'].choices = [('', 'เลือกหน่วย')] + list(Ingredient.Unit.choices)
         self.fields['price'].required = True
         self.fields['par_level'].help_text = (
-            'ระบบจะแจ้งเตือนเมื่อของเหลือถึงจำนวนนี้หรือน้อยกว่า '
-            '(ใส่ 0 เพื่อปิดการแจ้งเตือน)'
+            'ระบบจะแจ้งเตือนเมื่อของเหลือถึงจำนวนนี้หรือน้อยกว่า ' '(ใส่ 0 เพื่อปิดการแจ้งเตือน)'
         )
         if self.instance.pk:
             # แก้ไขวัตถุดิบเดิม: ไม่มีช่องวันหมดอายุ (วันหมดอายุอยู่ที่ล็อต)

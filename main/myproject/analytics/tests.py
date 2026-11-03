@@ -70,12 +70,8 @@ class AnalyticsServiceTests(TestCase):
 
     def test_sales_trend_compares_current_and_previous_30_day_periods(self):
         now = timezone.now()
-        current = Order.objects.create(
-            restaurant=self.restaurant, total_amount=Decimal('200.00')
-        )
-        previous = Order.objects.create(
-            restaurant=self.restaurant, total_amount=Decimal('100.00')
-        )
+        current = Order.objects.create(restaurant=self.restaurant, total_amount=Decimal('200.00'))
+        previous = Order.objects.create(restaurant=self.restaurant, total_amount=Decimal('100.00'))
         other_tenant = Order.objects.create(
             restaurant=self.other_restaurant, total_amount=Decimal('999.00')
         )
