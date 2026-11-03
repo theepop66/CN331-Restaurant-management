@@ -138,10 +138,17 @@ def _rules_based_insights(data):
             for row in data['restock_suggestions'][:5]
         )
         if items:
-            suggestions.append(f'ถึงจุดสั่งซื้อแล้ว ควรสั่งโดยเร็วเพื่อเติมถึง 2 เท่าของจุดเตือน: {items}')
+            suggestions.append(
+                'ถึงจุดสั่งซื้อแล้ว ควรสั่งโดยเร็วเพื่อเติมถึง 2 เท่าของจุดเตือน: '
+                f'{items}'
+            )
         unset = [item.name for item in data['low_stock'] if item.par_level <= 0]
         if unset:
-            suggestions.append(f'กำหนดจุดสั่งซื้อซ้ำสำหรับวัตถุดิบที่ยังไม่ตั้งค่า: {", ".join(unset[:5])}')
+            names = ', '.join(unset[:5])
+            suggestions.append(
+                'กำหนดจุดสั่งซื้อซ้ำสำหรับวัตถุดิบที่ยังไม่ตั้งค่า: '
+                f'{names}'
+            )
     if data['expiring_lots']:
         lots = ', '.join(
             f'{lot.ingredient.name} ({lot.expiry_date:%d/%m})' for lot in data['expiring_lots'][:5]
