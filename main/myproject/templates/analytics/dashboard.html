@@ -40,9 +40,9 @@
 </section>
 
 <section class="card mb-4">
-    <div class="card-header"><h2 class="h5 mb-0">รายการถึงจุดสั่งซื้อซ้ำ</h2></div>
+    <div class="card-header"><h2 class="h5 mb-0">วัตถุดิบที่ควรสั่งซื้อ</h2></div>
     <div class="table-responsive"><table class="table table-striped mb-0">
-        <thead><tr><th>วัตถุดิบ</th><th class="text-end">คงเหลือ</th><th class="text-end">จุดเตือน</th><th class="text-end">แนะนำสั่งเติม</th></tr></thead>
+        <thead><tr><th>วัตถุดิบ</th><th class="text-end">เหลืออยู่</th><th class="text-end">แจ้งเตือนเมื่อเหลือ</th><th class="text-end">แนะนำให้สั่ง</th></tr></thead>
         <tbody>
         {% for row in restock_suggestions %}<tr>
             <td>{{ row.ingredient.name }}</td>
@@ -52,12 +52,12 @@
         </tr>{% endfor %}
         {% for ingredient in low_stock %}{% if not ingredient.par_level %}<tr>
             <td>{{ ingredient.name }}</td><td class="text-end">{{ ingredient.stock_quantity }} {{ ingredient.get_unit_display }}</td>
-            <td colspan="2" class="text-end text-danger">กำหนดจุดสั่งซื้อซ้ำในหน้าคลังวัตถุดิบ</td>
+            <td colspan="2" class="text-end text-danger">ตั้งจุดเตือนสต็อกในหน้าคลังวัตถุดิบ</td>
         </tr>{% endif %}{% endfor %}
         {% if not low_stock %}<tr><td colspan="4" class="text-center text-muted">ยังไม่มีวัตถุดิบถึงจุดสั่งซื้อซ้ำ</td></tr>{% endif %}
         </tbody>
     </table></div>
-    <div class="card-footer small text-muted">จำนวนแนะนำคำนวณเพื่อเติมสต็อกให้ถึง 2 เท่าของจุดเตือน</div>
+    <div class="card-footer small text-muted">จำนวนที่แนะนำจะช่วยเติมสต็อกให้มีของเหลือประมาณ 2 เท่าของจุดเตือน</div>
 </section>
 
 <section class="card mb-4">
