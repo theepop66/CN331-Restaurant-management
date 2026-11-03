@@ -3,7 +3,7 @@ from decimal import Decimal
 from django import forms
 from django.utils import timezone
 
-from .models import Ingredient
+from .models import Ingredient, PAR_LEVEL_HELP_TEXT
 
 ZERO = Decimal('0')
 MIN_STOCK_IN = Decimal('0.001')
@@ -92,9 +92,7 @@ class IngredientForm(forms.ModelForm):
         self.restaurant = restaurant
         self.fields['unit'].choices = [('', 'เลือกหน่วย')] + list(Ingredient.Unit.choices)
         self.fields['price'].required = True
-        self.fields['par_level'].help_text = (
-            'ระบบจะแจ้งเตือนเมื่อของเหลือถึงจำนวนนี้หรือน้อยกว่า ' '(ใส่ 0 เพื่อปิดการแจ้งเตือน)'
-        )
+        self.fields['par_level'].help_text = PAR_LEVEL_HELP_TEXT
         if self.instance.pk:
             # แก้ไขวัตถุดิบเดิม: ไม่มีช่องวันหมดอายุ (วันหมดอายุอยู่ที่ล็อต)
             del self.fields['expiry_date']
