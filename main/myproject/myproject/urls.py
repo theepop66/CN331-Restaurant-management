@@ -25,5 +25,5 @@ urlpatterns = [
     path('inventory/', include('inventory.urls')),  # UC-02 (คนที่ 2)
     path('menus/', include('menus.urls')),  # US-03 / UC-03
     path('orders/', include('orders.urls')),  # UC-04 (คนที่ 4)
-    # path('analytics/', include('analytics.urls')),  # UC-05, UC-06 (คนที่ 5)
+    path('analytics/', include('analytics.urls')),  # UC-05 (คนที่ 5)
 ]
