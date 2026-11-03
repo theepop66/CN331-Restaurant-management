@@ -80,6 +80,14 @@ class Ingredient(models.Model):
         default=Decimal('0'),
         validators=[MinValueValidator(Decimal('0'))],
     )
+    par_level = models.DecimalField(
+        'จุดแจ้งเตือนสั่งซื้อซ้ำ',
+        max_digits=12,
+        decimal_places=3,
+        default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text='แจ้งเตือนเมื่อคงเหลือถึงหรือต่ำกว่าค่านี้; 0 คือยังไม่กำหนด',
+    )
     price = models.DecimalField(
         'ราคาต่อหน่วย',
         max_digits=10,
@@ -165,6 +173,7 @@ class Ingredient(models.Model):
                 unit=self.unit,
                 price=self.price,
                 stock_quantity=self.stock_quantity,
+                par_level=self.par_level,
                 updated_at=updated_at,
                 revision=F('revision') + 1,
             )

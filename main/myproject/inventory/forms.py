@@ -39,13 +39,14 @@ class IngredientForm(forms.ModelForm):
 
     class Meta:
         model = Ingredient
-        fields = ['name', 'barcode', 'unit', 'price', 'stock_quantity']
+        fields = ['name', 'barcode', 'unit', 'price', 'stock_quantity', 'par_level']
         labels = {
             'name': 'ชื่อวัตถุดิบ',
             'barcode': 'บาร์โค้ด',
             'unit': 'หน่วย',
             'price': 'ราคาต่อหน่วย (บาท)',
             'stock_quantity': 'ปริมาณ',
+            'par_level': 'จุดแจ้งเตือนสั่งซื้อซ้ำ',
         }
         widgets = {
             'name': forms.TextInput(
@@ -71,6 +72,13 @@ class IngredientForm(forms.ModelForm):
                 }
             ),
             'stock_quantity': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': '0',
+                    'step': '0.001',
+                }
+            ),
+            'par_level': forms.NumberInput(
                 attrs={
                     'class': 'form-control',
                     'min': '0',

@@ -42,14 +42,26 @@ def build_dashboard_data(restaurant):
             'margin': margin, 'missing_cost': missing_cost,
         })
 
-    cutoff = timezone.now() - timedelta(days=30)
-    sales = Order.objects.filter(
-        restaurant=restaurant, status=Order.Status.COMPLETED, created_at__gte=cutoff
+    now = timezone.now()
+    cutoff = now - timedelta(days=30)
+    previous_cutoff = cutoff - timedelta(days=30)
+    sales_qs = Order.objects.filter(
+        restaurant=restaurant, status=Order.Status.COMPLETED
+    )
+    sales = sales_qs.filter(created_at__gte=cutoff, created_at__lte=now).aggregate(
+        total=Sum('total_amount')
+    )['total'] or Decimal('0.00')
+    previous_sales = sales_qs.filter(
+        created_at__gte=previous_cutoff, created_at__lt=cutoff
     ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+    sales_change_percent = (
+        (sales - previous_sales) / previous_sales * 100 if previous_sales else None
+    )
     sold = (OrderItem.objects.filter(
         order__restaurant=restaurant,
         order__status=Order.Status.COMPLETED,
         order__created_at__gte=cutoff,
+        order__created_at__lte=now,
         menu_item__isnull=False,
     ).values('menu_item_id', 'name_snapshot')
         .annotate(quantity=Sum('quantity'), revenue=Sum('line_total'))
@@ -73,8 +85,19 @@ def build_dashboard_data(restaurant):
     )
     recent_receipts = list(StockIn.objects.filter(restaurant=restaurant)
                            .select_related('ingredient').order_by('-received_at')[:15])
-    # Inventory has no reorder threshold field yet, so flag depleted items here.
-    low_stock = [item for item in ingredients if item.stock_quantity <= 0]
+    low_stock = [
+        item for item in ingredients
+        if item.stock_quantity <= item.par_level
+    ]
+    restock_suggestions = [
+        {
+            'ingredient': item,
+            'quantity': max(item.par_level * 2 - item.stock_quantity, Decimal('0')),
+            'unit': item.unit,
+        }
+        for item in low_stock
+        if item.par_level > 0
+    ]
     expiring_lots = list(StockIn.objects.filter(
         restaurant=restaurant,
         remaining_quantity__gt=0,
@@ -84,11 +107,14 @@ def build_dashboard_data(restaurant):
     return {
         'stock_value': stock_value,
         'sales_30d': sales,
+        'sales_previous_30d': previous_sales,
+        'sales_change_percent': sales_change_percent,
         'menu_costs': menu_costs,
         'best_menu': best_menu,
         'recent_movements': recent_movements,
         'recent_receipts': recent_receipts,
         'low_stock': low_stock,
+        'restock_suggestions': restock_suggestions,
         'expiring_lots': expiring_lots,
         'top_sellers': list(sold[:5]),
     }
@@ -97,8 +123,15 @@ def build_dashboard_data(restaurant):
 def _rules_based_insights(data):
     suggestions = []
     if data['low_stock']:
-        names = ', '.join(item.name for item in data['low_stock'][:5])
-        suggestions.append(f'ตรวจสอบสต็อกที่หมดหรือเหลือน้อย: {names}')
+        items = ', '.join(
+            f"{row['ingredient'].name}: สั่งประมาณ {row['quantity']} {row['ingredient'].unit}"
+            for row in data['restock_suggestions'][:5]
+        )
+        if items:
+            suggestions.append(f'ถึงจุดสั่งซื้อแล้ว ควรสั่งโดยเร็วเพื่อเติมถึง 2 เท่าของจุดเตือน: {items}')
+        unset = [item.name for item in data['low_stock'] if item.par_level <= 0]
+        if unset:
+            suggestions.append(f'กำหนดจุดสั่งซื้อซ้ำสำหรับวัตถุดิบที่ยังไม่ตั้งค่า: {", ".join(unset[:5])}')
     if data['expiring_lots']:
         lots = ', '.join(
             f'{lot.ingredient.name} ({lot.expiry_date:%d/%m})'
@@ -110,6 +143,12 @@ def _rules_based_insights(data):
         suggestions.append(
             f"เมนูขายดีใน 30 วัน: {item['name']} ({item['quantity']} จาน) "
             f"กำไรขั้นต้นตามสูตรปัจจุบันประมาณ {item['profit']:.2f} บาท"
+        )
+    if data['sales_change_percent'] is not None:
+        direction = 'เพิ่มขึ้น' if data['sales_change_percent'] >= 0 else 'ลดลง'
+        suggestions.append(
+            f"ยอดขาย 30 วัน {direction} {abs(data['sales_change_percent']):.1f}% "
+            'เมื่อเทียบกับ 30 วันก่อนหน้า'
         )
     if not suggestions:
         suggestions.append('ยังไม่มีสัญญาณเร่งด่วนจากข้อมูลสต็อกและยอดขายปัจจุบัน')
@@ -138,12 +177,27 @@ def get_ai_insights(restaurant, data):
             )},
             {'role': 'user', 'content': json.dumps({
                 'sales_last_30_days': str(data['sales_30d']),
+                'sales_previous_30_days': str(data['sales_previous_30d']),
+                'sales_change_percent': (
+                    str(data['sales_change_percent'])
+                    if data['sales_change_percent'] is not None else None
+                ),
                 'top_sellers': [
                     {'name': x['name_snapshot'], 'quantity': x['quantity'],
                      'revenue': str(x['revenue'])}
                     for x in data['top_sellers']
                 ],
-                'low_stock': [x.name for x in data['low_stock']],
+                'reorder_now': [
+                    {'ingredient': row['ingredient'].name,
+                     'stock': str(row['ingredient'].stock_quantity),
+                     'par_level': str(row['ingredient'].par_level),
+                     'suggested_order_quantity': str(row['quantity']),
+                     'unit': row['ingredient'].unit}
+                    for row in data['restock_suggestions']
+                ],
+                'reorder_point_not_set': [
+                    item.name for item in data['low_stock'] if item.par_level <= 0
+                ],
                 'expiring_lots': [
                     {'ingredient': x.ingredient.name, 'remaining': str(x.remaining_quantity),
                      'expiry': x.expiry_date.isoformat()}

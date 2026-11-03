@@ -38,6 +38,8 @@
                 <dl class="def-list">
                     <dt>ราคาต่อหน่วย</dt>
                     <dd>฿{{ ingredient.price|floatformat:2 }}</dd>
+                    <dt>จุดแจ้งเตือนสั่งซื้อซ้ำ</dt>
+                    <dd>{% if ingredient.par_level %}{{ ingredient.par_level|floatformat:'-3' }} {{ ingredient.get_unit_display }}{% else %}ยังไม่กำหนด{% endif %}</dd>
                     <dt>จำนวนล็อต</dt>
                     <dd>{{ lots|length }}</dd>
                 </dl>

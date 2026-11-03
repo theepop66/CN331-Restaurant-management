@@ -33,6 +33,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.stock_quantity %}</div>
+                    <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.par_level %}</div>
                     {% if form.expiry_date %}
                     <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.expiry_date %}</div>
                     {% endif %}

@@ -19,6 +19,9 @@
     <div class="col-md-4"><div class="card h-100"><div class="card-body">
         <div class="text-muted">ยอดขาย 30 วัน</div>
         <div class="fs-3 fw-semibold">฿{{ sales_30d|floatformat:2 }}</div>
+        <div class="small text-muted">เทียบ 30 วันก่อน: ฿{{ sales_previous_30d|floatformat:2 }}
+            {% if sales_change_percent != None %}({{ sales_change_percent|floatformat:1 }}%){% else %}(ยังไม่มีฐานเปรียบเทียบ){% endif %}
+        </div>
     </div></div></div>
     <div class="col-md-4"><div class="card h-100"><div class="card-body">
         <div class="text-muted">เมนูทำกำไรสูงสุดจากเมนูขายดี</div>
@@ -34,6 +37,27 @@
         <small>{% if ai_provider == 'openai' %}AI{% else %}วิเคราะห์จากกฎในระบบ{% endif %}</small>
     </div>
     <div class="card-body"><p class="mb-0" style="white-space: pre-line">{{ ai_insights }}</p></div>
+</section>
+
+<section class="card mb-4">
+    <div class="card-header"><h2 class="h5 mb-0">รายการถึงจุดสั่งซื้อซ้ำ</h2></div>
+    <div class="table-responsive"><table class="table table-striped mb-0">
+        <thead><tr><th>วัตถุดิบ</th><th class="text-end">คงเหลือ</th><th class="text-end">จุดเตือน</th><th class="text-end">แนะนำสั่งเติม</th></tr></thead>
+        <tbody>
+        {% for row in restock_suggestions %}<tr>
+            <td>{{ row.ingredient.name }}</td>
+            <td class="text-end">{{ row.ingredient.stock_quantity }} {{ row.ingredient.get_unit_display }}</td>
+            <td class="text-end">{{ row.ingredient.par_level }} {{ row.ingredient.get_unit_display }}</td>
+            <td class="text-end">{{ row.quantity }} {{ row.ingredient.get_unit_display }}</td>
+        </tr>{% endfor %}
+        {% for ingredient in low_stock %}{% if not ingredient.par_level %}<tr>
+            <td>{{ ingredient.name }}</td><td class="text-end">{{ ingredient.stock_quantity }} {{ ingredient.get_unit_display }}</td>
+            <td colspan="2" class="text-end text-warning">กำหนดจุดสั่งซื้อซ้ำในหน้าคลังวัตถุดิบ</td>
+        </tr>{% endif %}{% endfor %}
+        {% if not low_stock %}<tr><td colspan="4" class="text-center text-muted">ยังไม่มีวัตถุดิบถึงจุดสั่งซื้อซ้ำ</td></tr>{% endif %}
+        </tbody>
+    </table></div>
+    <div class="card-footer small text-muted">จำนวนแนะนำคำนวณเพื่อเติมสต็อกให้ถึง 2 เท่าของจุดเตือน</div>
 </section>
 
 <section class="card mb-4">
