@@ -3,7 +3,7 @@ from decimal import Decimal
 from django import forms
 from django.utils import timezone
 
-from .models import Ingredient
+from .models import PAR_LEVEL_HELP_TEXT, Ingredient
 
 ZERO = Decimal('0')
 MIN_STOCK_IN = Decimal('0.001')
@@ -39,13 +39,14 @@ class IngredientForm(forms.ModelForm):
 
     class Meta:
         model = Ingredient
-        fields = ['name', 'barcode', 'unit', 'price', 'stock_quantity']
+        fields = ['name', 'barcode', 'unit', 'price', 'stock_quantity', 'par_level']
         labels = {
             'name': 'ชื่อวัตถุดิบ',
             'barcode': 'บาร์โค้ด',
             'unit': 'หน่วย',
             'price': 'ราคาต่อหน่วย (บาท)',
             'stock_quantity': 'ปริมาณ',
+            'par_level': 'เตือนเมื่อเหลือไม่เกิน',
         }
         widgets = {
             'name': forms.TextInput(
@@ -77,6 +78,13 @@ class IngredientForm(forms.ModelForm):
                     'step': '0.001',
                 }
             ),
+            'par_level': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'min': '0',
+                    'step': '0.001',
+                }
+            ),
         }
 
     def __init__(self, *args, restaurant, **kwargs):
@@ -84,6 +92,8 @@ class IngredientForm(forms.ModelForm):
         self.restaurant = restaurant
         self.fields['unit'].choices = [('', 'เลือกหน่วย')] + list(Ingredient.Unit.choices)
         self.fields['price'].required = True
+        self.fields['par_level'].required = False
+        self.fields['par_level'].help_text = PAR_LEVEL_HELP_TEXT
         if self.instance.pk:
             # แก้ไขวัตถุดิบเดิม: ไม่มีช่องวันหมดอายุ (วันหมดอายุอยู่ที่ล็อต)
             del self.fields['expiry_date']
@@ -126,6 +136,14 @@ class IngredientForm(forms.ModelForm):
         if price <= ZERO:
             raise forms.ValidationError('ราคาต้องมากกว่า 0')
         return price
+
+    def clean_par_level(self):
+        par_level = self.cleaned_data.get('par_level')
+        if par_level is not None:
+            return par_level
+        if self.instance.pk and 'par_level' not in self.data:
+            return self.instance.par_level
+        return ZERO
 
     def clean_stock_quantity(self):
         qty = self.cleaned_data.get('stock_quantity')

@@ -11,6 +11,13 @@ from django.utils import timezone
 
 from accounts.transactions import restaurant_transaction
 
+PAR_LEVEL_HELP_TEXT = ' '.join(
+    (
+        'ระบบจะแจ้งเตือนเมื่อของเหลือถึงจำนวนนี้หรือน้อยกว่า',
+        '(ใส่ 0 เพื่อปิดการแจ้งเตือน)',
+    )
+)
+
 
 class IngredientQuerySet(models.QuerySet):
     def update(self, **kwargs):
@@ -79,6 +86,14 @@ class Ingredient(models.Model):
         decimal_places=3,
         default=Decimal('0'),
         validators=[MinValueValidator(Decimal('0'))],
+    )
+    par_level = models.DecimalField(
+        'เตือนเมื่อเหลือไม่เกิน',
+        max_digits=12,
+        decimal_places=3,
+        default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=PAR_LEVEL_HELP_TEXT,
     )
     price = models.DecimalField(
         'ราคาต่อหน่วย',
@@ -165,6 +180,7 @@ class Ingredient(models.Model):
                 unit=self.unit,
                 price=self.price,
                 stock_quantity=self.stock_quantity,
+                par_level=self.par_level,
                 updated_at=updated_at,
                 revision=F('revision') + 1,
             )

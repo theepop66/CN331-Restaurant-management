@@ -19,6 +19,9 @@
                         <a class="nav-link{% if request.resolver_match.app_name == 'orders' %} active{% endif %}" href="{% url 'orders:pos' %}">Mini-POS</a>
                     </li>
                     <li class="nav-item me-lg-3">
+                        <a class="nav-link{% if request.resolver_match.app_name == 'analytics' %} active{% endif %}" href="{% url 'analytics:dashboard' %}">การวิเคราะห์</a>
+                    </li>
+                    <li class="nav-item me-lg-3">
                         <span class="nav-link text-white-50">
                             {{ user.username }}{% if user.restaurant %} · {{ user.restaurant.name }}{% endif %}
                         </span>

@@ -99,3 +99,33 @@ python manage.py runserver
 | 3 | 6710615110 | ตุลธร ปานดำรง |
 | 4 | 6710615268 | วรเมธ เผ่าสังข์ |
 | 5 | 6710615250 | วชิรวิทย์ พุ่มหนู |
+
+## Analytics Dashboard and AI Insights
+
+The owner dashboard is available at `http://127.0.0.1:8000/analytics/`. Apply the database migrations after pulling the analytics changes:
+
+```bash
+cd main/myproject
+python manage.py migrate
+```
+
+The dashboard works without an AI credential and displays rule-based inventory and sales suggestions. To enable OpenAI-compatible insights, provide the API key to the process running Django. Do not commit API keys or put them in source files.
+
+**Windows PowerShell (current terminal only):**
+
+```powershell
+$env:OPENAI_API_KEY = "your-api-key"
+python manage.py runserver
+```
+
+**macOS / Linux:**
+
+```bash
+export OPENAI_API_KEY="your-api-key"
+python manage.py runserver
+```
+
+Optional settings are `OPENAI_MODEL` (defaults to `gpt-4o-mini`) and `OPENAI_API_URL` (defaults to the OpenAI chat completions endpoint). The AI receives restaurant sales totals, menu cost and margin data, low-stock items, and expiry information. Current 30-day sales are compared with the prior 30 days; when there were no sales in the comparison period, the percentage change is shown as unavailable.
+
+Set each ingredient's **reorder point** on its inventory create/edit form. When stock reaches that point, the dashboard recommends ordering enough to reach twice the reorder point. This is a simple planning target, not a supplier lead time forecast. A reorder point of zero means no target has been configured.
+

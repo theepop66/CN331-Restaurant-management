@@ -33,6 +33,17 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.stock_quantity %}</div>
+                    <div class="col-sm-6">
+                        <div class="mb-3">
+                            <label class="form-label" for="{{ form.par_level.id_for_label }}">{{ form.par_level.label }}</label>
+                            {{ form.par_level }}
+                            <div class="form-text d-flex align-items-start gap-1">
+                                <svg class="icon flex-shrink-0 mt-1" aria-hidden="true"><use href="#i-info"/></svg>
+                                <span>{{ form.par_level.help_text }}</span>
+                            </div>
+                            {% for error in form.par_level.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+                        </div>
+                    </div>
                     {% if form.expiry_date %}
                     <div class="col-sm-6">{% include 'inventory/_field.html' with field=form.expiry_date %}</div>
                     {% endif %}
@@ -49,4 +60,20 @@
         </div>
     </div>
 </div>
+<script>
+    (() => {
+        const unitSelect = document.getElementById('id_unit');
+        const thresholdLabel = document.querySelector('label[for="id_par_level"]');
+        if (!unitSelect || !thresholdLabel) return;
+
+        const updateThresholdUnit = () => {
+            const selected = unitSelect.options[unitSelect.selectedIndex];
+            const unitName = unitSelect.value ? selected.textContent.trim() : 'เลือกหน่วยก่อน';
+            thresholdLabel.textContent = `เตือนเมื่อเหลือไม่เกิน (${unitName})`;
+        };
+
+        unitSelect.addEventListener('change', updateThresholdUnit);
+        updateThresholdUnit();
+    })();
+</script>
 {% endblock %}
