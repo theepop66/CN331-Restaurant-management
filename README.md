@@ -129,3 +129,10 @@ Optional settings are `OPENAI_MODEL` (defaults to `gpt-4o-mini`) and `OPENAI_API
 
 Set each ingredient's **reorder point** on its inventory create/edit form. When stock reaches that point, the dashboard recommends ordering enough to reach twice the reorder point. This is a simple planning target, not a supplier lead time forecast. A reorder point of zero means no target has been configured.
 
+## Render deployment accounts
+
+- Set `DJANGO_SUPERUSER_PASSWORD` to provision the deployment administrator. The username and email default to `admin` and `admin@example.com` and can be set with `DJANGO_SUPERUSER_USERNAME` and `DJANGO_SUPERUSER_EMAIL`.
+- A new administrator, or a previously provisioned superuser without a restaurant, is assigned a dedicated restaurant by default. Set `DJANGO_SUPERUSER_RESTAURANT_ID` to the ID of the existing restaurant the administrator should manage. New and repaired accounts receive staff permissions for that restaurant and its inventory. Redeploying preserves an existing scoped administrator's password and restaurant.
+- Demo data is off by default. For a dedicated demo deployment, set `SEED_DEMO=true` and provide a strong `DEMO_OWNER_PASSWORD` in the service's environment. `DEMO_OWNER_USERNAME` defaults to `demo-owner`. Seeding creates a separate demo restaurant and leaves the account, stock, and recipes intact on subsequent builds.
+- If a deployment previously ran the old demo seed, reset or disable the old `owner` login on that deployment. Its previously published credential remains exposed until rotated.
+

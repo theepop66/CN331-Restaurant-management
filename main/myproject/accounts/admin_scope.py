@@ -8,7 +8,11 @@ from .models import CustomUser, Restaurant
 
 class RestaurantOwnerAdmin(admin.ModelAdmin):
     def _is_owner(self, request):
-        return request.user.role == CustomUser.Role.OWNER and request.user.restaurant_id is not None
+        return (
+            request.user.is_authenticated
+            and request.user.role == CustomUser.Role.OWNER
+            and request.user.restaurant_id is not None
+        )
 
     def has_module_permission(self, request):
         return self._is_owner(request) and super().has_module_permission(request)
