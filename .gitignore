@@ -45,3 +45,6 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 .scratch/us-03/*.png
+
+# collectstatic output (generated on deploy)
+staticfiles/
