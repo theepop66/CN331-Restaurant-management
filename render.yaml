@@ -26,6 +26,6 @@ services:
       - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
       - key: SEED_DEMO
-        value: "true"
+        value: "false"
       - key: OPENAI_API_KEY
         sync: false

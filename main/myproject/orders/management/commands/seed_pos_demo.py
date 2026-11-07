@@ -1,43 +1,60 @@
 """[US-04] Management command to seed demo data for Mini-POS live demonstration."""
 
+import os
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.core.management.base import BaseCommand
+from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 from accounts.models import CustomUser, Restaurant
 from inventory.models import Ingredient, StockIn
 from menus.models import MenuItem, RecipeItem
 
+DEMO_RESTAURANT_NAME = 'ร้านหมูแองกี้เบิ้ด 🐷'
+
 
 class Command(BaseCommand):
     help = 'Seeds sample restaurant, ingredients, and menus for POS demo'
 
+    @transaction.atomic
     def handle(self, *args, **options):
-        # 1. Create Restaurant
-        restaurant, created = Restaurant.objects.get_or_create(
-            name='ร้านหมูแองกี้เบิ้ด 🐷',
-        )
+        username = os.environ.get('DEMO_OWNER_USERNAME') or 'demo-owner'
+        password = os.environ.get('DEMO_OWNER_PASSWORD')
+        if not password:
+            raise CommandError('Set DEMO_OWNER_PASSWORD before seeding demo data.')
 
-        # 2. Create Owner User
-        user, u_created = CustomUser.objects.get_or_create(
-            username='owner',
-            defaults={
-                'email': 'owner@angrybird.com',
-                'role': CustomUser.Role.OWNER,
-                'restaurant': restaurant,
-            },
-        )
-        user.set_password('password123')
-        user.role = CustomUser.Role.OWNER
-        user.restaurant = restaurant
-        user.save()
+        user = CustomUser.objects.select_related('restaurant').filter(username=username).first()
+        if user is not None:
+            if (
+                user.is_active
+                and not user.is_staff
+                and not user.is_superuser
+                and user.role == CustomUser.Role.OWNER
+                and user.restaurant is not None
+                and user.restaurant.name == DEMO_RESTAURANT_NAME
+                and check_password(password, user.password)
+            ):
+                self.stdout.write('Demo data is already seeded.')
+                return
+            raise CommandError('The configured demo username belongs to a different account.')
 
-        self.stdout.write(
-            self.style.SUCCESS('Created/Updated Owner user: owner (password: password123)')
-        )
+        try:
+            validate_password(password, user=CustomUser(username=username))
+        except ValidationError as exc:
+            raise CommandError('Invalid DEMO_OWNER_PASSWORD: ' + ' '.join(exc.messages)) from exc
 
-        # 3. Create Ingredients
+        restaurant = Restaurant.objects.create(name=DEMO_RESTAURANT_NAME)
+        CustomUser.objects.create_user(
+            username=username, password=password, role=CustomUser.Role.OWNER, restaurant=restaurant
+        )
+        self._seed_restaurant(restaurant)
+        self.stdout.write(self.style.SUCCESS('Demo restaurant, ingredients, and menus are ready.'))
+
+    def _seed_restaurant(self, restaurant):
         today = date.today()
 
         rice, _ = Ingredient.objects.get_or_create(
@@ -66,18 +83,6 @@ class Command(BaseCommand):
             defaults={'unit': 'kg', 'price': Decimal('650.00'), 'stock_quantity': Decimal('0.000')},
         )
 
-        # Ensure quantities are set for demo
-        rice.stock_quantity = Decimal('10.000')
-        rice.save()
-        egg.stock_quantity = Decimal('30.000')
-        egg.save()
-        pork.stock_quantity = Decimal('5.000')
-        pork.save()
-        basil.stock_quantity = Decimal('1.000')
-        basil.save()
-        beef_out.stock_quantity = Decimal('0.000')
-        beef_out.save()
-
         # Create StockIn lots for FEFO demo
         StockIn.objects.get_or_create(
             restaurant=restaurant,
@@ -100,17 +105,12 @@ class Command(BaseCommand):
             },
         )
 
-        # 4. Create Menus
         # Menu 1: กะเพราหมูกรอบ
         menu1, _ = MenuItem.objects.get_or_create(
             restaurant=restaurant,
             name='กะเพราหมูกรอบจานด่วน',
             defaults={'price': Decimal('65.00'), 'is_active': True},
         )
-        menu1.is_active = True
-        menu1.price = Decimal('65.00')
-        menu1.save()
-        menu1.recipe_items.all().delete()
         RecipeItem.objects.create(menu_item=menu1, ingredient=pork, quantity_used=Decimal('0.100'))
         RecipeItem.objects.create(menu_item=menu1, ingredient=basil, quantity_used=Decimal('0.020'))
         RecipeItem.objects.create(menu_item=menu1, ingredient=rice, quantity_used=Decimal('0.150'))
@@ -121,10 +121,6 @@ class Command(BaseCommand):
             name='ข้าวผัดไข่โบราณ',
             defaults={'price': Decimal('45.00'), 'is_active': True},
         )
-        menu2.is_active = True
-        menu2.price = Decimal('45.00')
-        menu2.save()
-        menu2.recipe_items.all().delete()
         RecipeItem.objects.create(menu_item=menu2, ingredient=rice, quantity_used=Decimal('0.200'))
         RecipeItem.objects.create(menu_item=menu2, ingredient=egg, quantity_used=Decimal('2.000'))
 
@@ -134,10 +130,6 @@ class Command(BaseCommand):
             name='ไข่ดาวกรอบ',
             defaults={'price': Decimal('12.00'), 'is_active': True},
         )
-        menu3.is_active = True
-        menu3.price = Decimal('12.00')
-        menu3.save()
-        menu3.recipe_items.all().delete()
         RecipeItem.objects.create(menu_item=menu3, ingredient=egg, quantity_used=Decimal('1.000'))
 
         # Menu 4: สเต๊กเนื้อวากิว (Out of Stock!)
@@ -146,14 +138,6 @@ class Command(BaseCommand):
             name='สเต๊กเนื้อริบอายวากิว',
             defaults={'price': Decimal('380.00'), 'is_active': True},
         )
-        menu4.is_active = True
-        menu4.price = Decimal('380.00')
-        menu4.save()
-        menu4.recipe_items.all().delete()
         RecipeItem.objects.create(
             menu_item=menu4, ingredient=beef_out, quantity_used=Decimal('0.200')
-        )
-
-        self.stdout.write(
-            self.style.SUCCESS('Successfully seeded demo restaurant, ingredients, and menus!')
         )
