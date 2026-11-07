@@ -7,17 +7,23 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import CustomUser, Restaurant
+from orders.models import Order
 
 ADMIN_PASSWORD = 'admin-deployment-test-passphrase'
 DEMO_PASSWORD = 'demo-deployment-test-passphrase'
 
 
 class DeploymentBootstrapTests(TestCase):
-    @patch.dict('os.environ', {'DJANGO_SUPERUSER_PASSWORD': ADMIN_PASSWORD}, clear=True)
+    @patch.dict(
+        'os.environ',
+        {'DJANGO_SUPERUSER_PASSWORD': ADMIN_PASSWORD, 'DJANGO_SUPERUSER_USERNAME': 'ａｄｍｉｎ'},
+        clear=True,
+    )
     def test_admin_can_log_in_and_redeploy_preserves_credentials(self):
         call_command('provision_deployment_admin', stdout=StringIO())
         admin = CustomUser.objects.get(username='admin')
         self.assertIsNotNone(admin.restaurant_id)
+        self.assertFalse(admin.is_superuser)
         password_hash, restaurant_id = admin.password, admin.restaurant_id
 
         login_page = self.client.get(reverse('admin:index'), follow=True)
@@ -35,6 +41,19 @@ class DeploymentBootstrapTests(TestCase):
         self.assertEqual((admin.password, admin.restaurant_id), (password_hash, restaurant_id))
         self.assertEqual(Restaurant.objects.count(), 1)
 
+        other_restaurant = Restaurant.objects.create(name='Other restaurant')
+        foreign_order = Order.objects.create(restaurant=other_restaurant)
+        self.assertEqual(
+            self.client.get(reverse('admin:inventory_ingredient_changelist')).status_code, 200
+        )
+        for url in (
+            reverse('admin:orders_order_change', args=[foreign_order.pk]),
+            reverse('admin:orders_orderitem_changelist'),
+            reverse('admin:auth_group_changelist'),
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 403)
+
     @patch.dict('os.environ', {'DJANGO_SUPERUSER_PASSWORD': ADMIN_PASSWORD}, clear=True)
     def test_unscoped_superuser_gets_configured_restaurant_without_password_reset(self):
         admin = CustomUser.objects.create_superuser(username='admin', password=ADMIN_PASSWORD)
@@ -47,6 +66,9 @@ class DeploymentBootstrapTests(TestCase):
         admin.refresh_from_db()
         self.assertEqual(admin.restaurant, restaurant)
         self.assertEqual(admin.password, password_hash)
+        self.assertFalse(admin.is_superuser)
+        self.assertTrue(admin.has_perm('inventory.change_ingredient'))
+        self.assertFalse(admin.has_perm('orders.view_order'))
         self.assertEqual(Restaurant.objects.count(), 1)
 
     @patch.dict('os.environ', {'DJANGO_SUPERUSER_PASSWORD': ADMIN_PASSWORD}, clear=True)
@@ -62,7 +84,11 @@ class DeploymentBootstrapTests(TestCase):
         self.assertEqual(existing.restaurant, restaurant)
         self.assertEqual(Restaurant.objects.count(), 1)
 
-    @patch.dict('os.environ', {'DEMO_OWNER_PASSWORD': DEMO_PASSWORD}, clear=True)
+    @patch.dict(
+        'os.environ',
+        {'DEMO_OWNER_PASSWORD': DEMO_PASSWORD, 'DEMO_OWNER_USERNAME': 'ｄｅｍｏ-ｏｗｎｅｒ'},
+        clear=True,
+    )
     def test_demo_seed_leaves_existing_owner_and_demo_changes_intact(self):
         restaurant = Restaurant.objects.create(name='Existing restaurant')
         existing = CustomUser.objects.create_user(username='owner', restaurant=restaurant)

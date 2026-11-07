@@ -22,10 +22,18 @@ class Command(BaseCommand):
 
     @transaction.atomic
     def handle(self, *args, **options):
-        username = os.environ.get('DEMO_OWNER_USERNAME') or 'demo-owner'
+        username = CustomUser.normalize_username(
+            os.environ.get('DEMO_OWNER_USERNAME') or 'demo-owner'
+        )
         password = os.environ.get('DEMO_OWNER_PASSWORD')
         if not password:
             raise CommandError('Set DEMO_OWNER_PASSWORD before seeding demo data.')
+
+        try:
+            CustomUser._meta.get_field('username').clean(username, None)
+            validate_password(password, user=CustomUser(username=username))
+        except ValidationError as exc:
+            raise CommandError('Invalid demo owner credentials: ' + ' '.join(exc.messages)) from exc
 
         user = CustomUser.objects.select_related('restaurant').filter(username=username).first()
         if user is not None:
@@ -41,11 +49,6 @@ class Command(BaseCommand):
                 self.stdout.write('Demo data is already seeded.')
                 return
             raise CommandError('The configured demo username belongs to a different account.')
-
-        try:
-            validate_password(password, user=CustomUser(username=username))
-        except ValidationError as exc:
-            raise CommandError('Invalid DEMO_OWNER_PASSWORD: ' + ' '.join(exc.messages)) from exc
 
         restaurant = Restaurant.objects.create(name=DEMO_RESTAURANT_NAME)
         CustomUser.objects.create_user(
