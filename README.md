@@ -1,5 +1,9 @@
 # Smart Restaurant Stock & Mini-POS System
 
+[![CI](https://github.com/theepop66/CN331-Restaurant-management/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/theepop66/CN331-Restaurant-management/actions/workflows/ci.yml)
+
+**Live demo:** <!-- TODO: ใส่ URL ของ Render เมื่อ deploy เสร็จ --> _(รอใส่ URL)_
+
 > **กลุ่ม:** หมูแองกี้เบิ้ด  
 > **วิชา:** CN331 Software Engineering (วิศวกรรมซอฟต์แวร์)  
 > **ภาคการศึกษา:** 1/2569  
@@ -99,6 +103,27 @@ python manage.py runserver
 | 3 | 6710615110 | ตุลธร ปานดำรง |
 | 4 | 6710615268 | วรเมธ เผ่าสังข์ |
 | 5 | 6710615250 | วชิรวิทย์ พุ่มหนู |
+
+## 4. สถาปัตยกรรมและเอกสาร (Architecture & Docs)
+
+| เอกสาร | เนื้อหา |
+|---|---|
+| [C4 Context / Container / Component](docs/architecture/c4.md) | ภาพรวมระบบ, Render + PostgreSQL, 5 Django apps |
+| [ERD](docs/architecture/erd.md) | โครงสร้างฐานข้อมูลจาก `models.py` |
+| [ADR 001](docs/adr/001-service-layer-and-concurrency.md) | Service Layer + การจัดการ concurrency |
+| [ADR 002](docs/adr/002-fefo-lot-allocation.md) | ตัดสต็อกแบบ FEFO (หมดอายุก่อนใช้ก่อน) |
+| [Sprint 1 Retrospective](docs/sprint1_retro.md) | บันทึกทบทวน Sprint 1 |
+
+โครงสร้างโค้ดแบ่งเป็น 5 apps: `accounts` (ผู้ใช้/ร้าน), `inventory` (วัตถุดิบ/ล็อต), `menus` (เมนู/สูตร), `orders` (Mini-POS/ตัดสต็อก), `analytics` (แดชบอร์ด/AI)
+
+### การทดสอบและ CI
+
+CI (GitHub Actions, [`ci.yml`](.github/workflows/ci.yml)) รันทุก push/PR ไป `main` ตรวจ Black, Flake8, Ruff, Mypy, Bandit, `manage.py check`, migration และ test พร้อมเกณฑ์ coverage ขั้นต่ำ 80%
+
+```bash
+cd main/myproject
+python manage.py test
+```
 
 ## Analytics Dashboard and AI Insights
 
