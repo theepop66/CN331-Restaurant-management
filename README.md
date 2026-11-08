@@ -108,7 +108,7 @@ python manage.py runserver
 
 | เอกสาร | เนื้อหา |
 |---|---|
-| [C4 Context / Container / Component](docs/architecture/c4.md) | ภาพรวมระบบ, Render + PostgreSQL, 5 Django apps |
+| [C4 Level 1–4](docs/architecture/c4.md) | Context, Container (Render + PostgreSQL), Component (5 Django apps), Code (flow ขายและตัดสต็อก FEFO) |
 | [ERD](docs/architecture/erd.md) | โครงสร้างฐานข้อมูลจาก `models.py` |
 | [ADR 001](docs/adr/001-service-layer-and-concurrency.md) | Service Layer + การจัดการ concurrency |
 | [ADR 002](docs/adr/002-fefo-lot-allocation.md) | ตัดสต็อกแบบ FEFO (หมดอายุก่อนใช้ก่อน) |
