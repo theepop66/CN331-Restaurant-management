@@ -10,7 +10,7 @@ from accounts.models import CustomUser, Restaurant
 
 from .forms import IngredientForm
 from .models import Ingredient, StockIn
-from .views import _add_stock
+from .services import add_stock as _add_stock
 
 
 class InventoryTestBase(TestCase):
