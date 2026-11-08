@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/theepop66/CN331-Restaurant-management/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/theepop66/CN331-Restaurant-management/actions/workflows/ci.yml)
 
-**Live demo:** <!-- TODO: ใส่ URL ของ Render เมื่อ deploy เสร็จ --> _(รอใส่ URL)_
+**Live demo:** https://cn331-mooangrybird-restaurant.onrender.com
 
 > **กลุ่ม:** หมูแองกี้เบิ้ด  
 > **วิชา:** CN331 Software Engineering (วิศวกรรมซอฟต์แวร์)  
