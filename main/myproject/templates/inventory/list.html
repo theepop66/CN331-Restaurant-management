@@ -59,8 +59,10 @@
         เปิดกล้องสแกนบาร์โค้ด
     </button>
     <div id="barcode-camera-preview" class="mt-2" hidden>
-        <video class="w-100 rounded bg-dark" style="max-height: 40vh" autoplay muted playsinline
-               aria-label="ภาพจากกล้องสำหรับสแกนบาร์โค้ด"></video>
+        <div class="barcode-camera-viewfinder">
+            <video autoplay muted playsinline aria-label="ภาพจากกล้องสำหรับสแกนบาร์โค้ด"></video>
+            <div class="barcode-camera-guide" aria-hidden="true"></div>
+        </div>
         <button type="button" id="barcode-camera-close" class="btn btn-outline-secondary mt-2">ปิดกล้อง</button>
     </div>
     <p id="barcode-camera-status" class="scan-hint mb-0" role="status"></p>
