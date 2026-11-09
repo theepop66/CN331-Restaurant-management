@@ -7,12 +7,16 @@
     const closeButton = document.getElementById('barcode-camera-close');
     const preview = document.getElementById('barcode-camera-preview');
     const status = document.getElementById('barcode-camera-status');
+    const instruction = document.getElementById('barcode-camera-instruction');
     const video = preview.querySelector('video');
+    const guide = preview.querySelector('.barcode-camera-guide');
+    const scanCanvas = document.createElement('canvas');
+    const scanContext = scanCanvas.getContext('2d', { willReadFrequently: true });
     const cameraOptions = {
         video: {
             facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
             advanced: [{ focusMode: 'continuous' }],
         },
         audio: false,
@@ -22,22 +26,57 @@
         NotFoundError: 'ไม่พบกล้องบนอุปกรณ์นี้',
         NotReadableError: 'เปิดกล้องไม่ได้ ลองปิดแอปอื่นที่กำลังใช้กล้อง',
     };
-    let active = false;
     let opening = false;
-    let controls;
     let stream;
+    let scanTimer;
 
     function stopCamera() {
-        active = false;
-        preview.hidden = true;
-        if (controls) {
-            controls.stop();
-            controls = undefined;
-        } else {
-            stream?.getTracks().forEach(track => track.stop());
+        clearTimeout(scanTimer);
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            video.pause();
+            video.srcObject = null;
+            stream = undefined;
         }
-        stream = undefined;
+        if (preview.open) preview.close();
         openButton.disabled = opening || photoButton.disabled;
+    }
+
+    function readBarcodeInGuide(reader) {
+        const sourceWidth = video.videoWidth;
+        const sourceHeight = video.videoHeight;
+        // The centered cover preview can crop the sides of the camera image.
+        const scale = Math.max(video.clientWidth / sourceWidth, video.clientHeight / sourceHeight);
+        const width = Math.round(guide.clientWidth / scale);
+        const height = Math.round(guide.clientHeight / scale);
+        if (width < 1 || height < 1) return;
+
+        if (scanCanvas.width !== width || scanCanvas.height !== height) {
+            scanCanvas.width = width;
+            scanCanvas.height = height;
+        }
+        const x = (sourceWidth - width) / 2;
+        const y = (sourceHeight - height) / 2;
+        scanContext.drawImage(video, x, y, width, height, 0, 0, width, height);
+        try {
+            return reader.decodeFromCanvas(scanCanvas).getText().trim();
+        } catch {
+            // Keep scanning until the barcode is clear enough to decode.
+        }
+    }
+
+    function scanFrame(reader) {
+        if (!preview.open) return;
+        if (video.readyState >= 2 && video.videoWidth && video.videoHeight) {
+            const code = readBarcodeInGuide(reader);
+            if (code && code.length <= barcode.maxLength) {
+                stopCamera();
+                barcode.value = code;
+                form.requestSubmit();
+                return;
+            }
+        }
+        scanTimer = setTimeout(() => scanFrame(reader), 180);
     }
 
     photoButton.hidden = !window.ZXingBrowser;
@@ -79,55 +118,44 @@
 
     openButton.hidden = false;
     openButton.addEventListener('click', async () => {
-        if (!navigator.mediaDevices?.getUserMedia || !window.ZXingBrowser) {
+        if (!navigator.mediaDevices?.getUserMedia || !window.ZXingBrowser || !preview.showModal || !scanContext) {
             status.textContent = 'เปิดตัวสแกนกล้องไม่ได้ กรุณาพิมพ์รหัสหรือใช้เครื่องสแกนภายนอก';
             return;
         }
 
-        active = true;
         opening = true;
         openButton.disabled = true;
-        preview.hidden = false;
-        closeButton.focus();
-        status.textContent = 'กำลังเปิดกล้อง…';
+        status.textContent = '';
+        instruction.textContent = 'กำลังเปิดกล้อง…';
         try {
+            preview.showModal();
             const cameraStream = await navigator.mediaDevices.getUserMedia(cameraOptions);
-            if (!active) {
+            if (!preview.open) {
                 cameraStream.getTracks().forEach(track => track.stop());
                 return;
             }
             stream = cameraStream;
-            const reader = new window.ZXingBrowser.BrowserMultiFormatReader();
-            const scanner = await reader.decodeFromStream(stream, video, result => {
-                if (!active || !result) return;
-                const code = result.getText().trim();
-                if (!code || code.length > barcode.maxLength) return;
-                stopCamera();
-                barcode.value = code;
-                form.requestSubmit();
-            });
-            if (active) {
-                controls = scanner;
-                status.textContent = 'วางบาร์โค้ดทั้งอันในกรอบ ให้เส้นแดงตัดผ่านแท่งบาร์โค้ด แล้วขยับจนภาพคมชัด';
-            } else {
-                scanner.stop();
-            }
+            video.srcObject = stream;
+            await video.play();
+            if (!preview.open) return;
+            instruction.textContent = 'วางบาร์โค้ดทั้งอันในกรอบ ให้เส้นแดงพาดผ่านกลางรหัส ถ้าภาพเบลอให้ถอยมือถือออกช้า ๆ';
+            scanFrame(new window.ZXingBrowser.BrowserMultiFormatReader());
         } catch (error) {
-            if (active) {
+            if (preview.open) {
                 stopCamera();
                 status.textContent = cameraErrors[error.name] || 'เปิดกล้องไม่ได้ กรุณาลองอีกครั้ง';
                 barcode.focus();
             }
         } finally {
             opening = false;
-            openButton.disabled = active || photoButton.disabled;
+            openButton.disabled = preview.open || photoButton.disabled;
         }
     });
 
-    closeButton.addEventListener('click', () => {
+    closeButton.addEventListener('click', stopCamera);
+    preview.addEventListener('cancel', event => {
+        event.preventDefault();
         stopCamera();
-        status.textContent = '';
-        barcode.focus();
     });
     form.addEventListener('submit', stopCamera);
     window.addEventListener('pagehide', stopCamera);

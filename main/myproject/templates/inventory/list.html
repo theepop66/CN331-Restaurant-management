@@ -56,21 +56,25 @@
         ปกติ = สแกนแล้วกรอกจำนวนได้เลย &nbsp;·&nbsp; สแกนรัว = สแกนปุ๊บบวกให้ 1 ทันที เหมาะตอนของเข้าเยอะ ๆ
     </p>
     <div class="d-flex flex-wrap gap-2 mt-2">
-        <button type="button" id="barcode-photo-open" class="btn btn-outline-primary" hidden>
-            ถ่ายบาร์โค้ดด้วยกล้องมือถือ
+        <button type="button" id="barcode-camera-open" class="btn btn-outline-primary" hidden>
+            เปิดกล้องสแกนเต็มจอ
         </button>
-        <button type="button" id="barcode-camera-open" class="btn btn-outline-secondary" hidden>
-            เปิดกล้องสแกนบนเว็บ
+        <button type="button" id="barcode-photo-open" class="btn btn-outline-secondary" hidden>
+            ถ่ายรูปบาร์โค้ด
         </button>
     </div>
     <input type="file" id="barcode-photo" accept="image/*" capture="environment" hidden>
-    <div id="barcode-camera-preview" class="mt-2" hidden>
+    <dialog id="barcode-camera-preview" class="barcode-camera-screen" aria-labelledby="barcode-camera-title">
         <div class="barcode-camera-viewfinder">
             <video autoplay muted playsinline aria-label="ภาพจากกล้องสำหรับสแกนบาร์โค้ด"></video>
             <div class="barcode-camera-guide" aria-hidden="true"></div>
         </div>
-        <button type="button" id="barcode-camera-close" class="btn btn-outline-secondary mt-2">ปิดกล้อง</button>
-    </div>
+        <div class="barcode-camera-toolbar">
+            <h2 id="barcode-camera-title" class="h5 mb-0">สแกนบาร์โค้ด</h2>
+            <button type="button" id="barcode-camera-close" class="btn btn-light" autofocus>ปิดกล้อง</button>
+        </div>
+        <p id="barcode-camera-instruction" class="barcode-camera-instruction" role="status"></p>
+    </dialog>
     <p id="barcode-camera-status" class="scan-hint mb-0" role="status"></p>
 </form>
 
