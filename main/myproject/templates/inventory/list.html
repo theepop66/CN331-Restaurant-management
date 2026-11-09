@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}คลังวัตถุดิบ{% endblock %}
 
@@ -31,7 +32,7 @@
 </div>
 {% endif %}
 
-<form method="post" action="{% url 'inventory:scan' %}" class="scan-panel">
+<form id="inventory-scan-form" method="post" action="{% url 'inventory:scan' %}" class="scan-panel">
     {% csrf_token %}
     <div class="row g-2 align-items-end">
         <div class="col-12 col-lg-7">
@@ -54,6 +55,15 @@
     <p class="scan-hint">
         ปกติ = สแกนแล้วกรอกจำนวนได้เลย &nbsp;·&nbsp; สแกนรัว = สแกนปุ๊บบวกให้ 1 ทันที เหมาะตอนของเข้าเยอะ ๆ
     </p>
+    <button type="button" id="barcode-camera-open" class="btn btn-outline-primary" hidden>
+        เปิดกล้องสแกนบาร์โค้ด
+    </button>
+    <div id="barcode-camera-preview" class="mt-2" hidden>
+        <video class="w-100 rounded bg-dark" style="max-height: 40vh" autoplay muted playsinline
+               aria-label="ภาพจากกล้องสำหรับสแกนบาร์โค้ด"></video>
+        <button type="button" id="barcode-camera-close" class="btn btn-outline-secondary mt-2">ปิดกล้อง</button>
+    </div>
+    <p id="barcode-camera-status" class="scan-hint mb-0" role="status"></p>
 </form>
 
 <form method="get" class="input-group mb-3" role="search">
@@ -166,6 +176,10 @@
 {% endblock %}
 
 {% block extra_js %}
+<script defer src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/zxing-browser.min.js"
+        integrity="sha384-ylLhng89kD62+PVK1cjm4rAYg69zDlGrbbSfAE2Eb8Xqf8RoAQCMcRoUXZh7pAPC"
+        crossorigin="anonymous"></script>
+<script defer src="{% static 'inventory/barcode-camera.js' %}"></script>
 <script>
     // โฟกัสช่องบาร์โค้ดทุกครั้งที่โหลดหน้า เพื่อสแกนชิ้นต่อไปได้ทันที
     (function () {
