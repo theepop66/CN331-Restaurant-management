@@ -55,9 +55,15 @@
     <p class="scan-hint">
         ปกติ = สแกนแล้วกรอกจำนวนได้เลย &nbsp;·&nbsp; สแกนรัว = สแกนปุ๊บบวกให้ 1 ทันที เหมาะตอนของเข้าเยอะ ๆ
     </p>
-    <button type="button" id="barcode-camera-open" class="btn btn-outline-primary" hidden>
-        เปิดกล้องสแกนบาร์โค้ด
-    </button>
+    <div class="d-flex flex-wrap gap-2 mt-2">
+        <button type="button" id="barcode-photo-open" class="btn btn-outline-primary" hidden>
+            ถ่ายบาร์โค้ดด้วยกล้องมือถือ
+        </button>
+        <button type="button" id="barcode-camera-open" class="btn btn-outline-secondary" hidden>
+            เปิดกล้องสแกนบนเว็บ
+        </button>
+    </div>
+    <input type="file" id="barcode-photo" accept="image/*" capture="environment" hidden>
     <div id="barcode-camera-preview" class="mt-2" hidden>
         <div class="barcode-camera-viewfinder">
             <video autoplay muted playsinline aria-label="ภาพจากกล้องสำหรับสแกนบาร์โค้ด"></video>
