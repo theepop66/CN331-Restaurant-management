@@ -6,7 +6,15 @@
     const preview = document.getElementById('barcode-camera-preview');
     const status = document.getElementById('barcode-camera-status');
     const video = preview.querySelector('video');
-    const cameraOptions = { video: { facingMode: { ideal: 'environment' } }, audio: false };
+    const cameraOptions = {
+        video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            advanced: [{ focusMode: 'continuous' }],
+        },
+        audio: false,
+    };
     const cameraErrors = {
         NotAllowedError: 'กรุณาอนุญาตให้เว็บไซต์ใช้กล้องในเบราว์เซอร์',
         NotFoundError: 'ไม่พบกล้องบนอุปกรณ์นี้',
@@ -61,7 +69,7 @@
             });
             if (active) {
                 controls = scanner;
-                status.textContent = 'เล็งกล้องไปที่บาร์โค้ดบนฉลาก';
+                status.textContent = 'วางบาร์โค้ดทั้งอันในกรอบ ให้เส้นแดงตัดผ่านแท่งบาร์โค้ด แล้วขยับจนภาพคมชัด';
             } else {
                 scanner.stop();
             }

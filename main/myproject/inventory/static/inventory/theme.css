@@ -104,6 +104,37 @@ code { color: var(--ink-soft); background: var(--neutral-tint); padding: .1rem .
 .scan-panel .form-control { font-size: 1.05rem; }
 .scan-panel .scan-hint { font-size: .85rem; color: var(--ink-soft); margin: .5rem 0 0; }
 
+.barcode-camera-viewfinder {
+    position: relative;
+    width: min(100%, 32rem);
+    height: min(55vw, 19rem, 45vh);
+    overflow: hidden;
+    background: #181818;
+    border-radius: var(--radius);
+}
+.barcode-camera-viewfinder video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.barcode-camera-guide {
+    position: absolute;
+    inset: 27% 8%;
+    border: 2px solid #fff;
+    border-radius: .5rem;
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 40%), 0 0 0 1px #181818;
+    pointer-events: none;
+}
+.barcode-camera-guide::after {
+    content: '';
+    position: absolute;
+    inset: 50% .375rem auto;
+    height: 2px;
+    background: #ff5a57;
+    box-shadow: 0 0 0 1px #181818;
+}
+
 .data-table { margin: 0; --bs-table-bg: transparent; }
 .data-table thead th { font-size: .8rem; font-weight: 600; color: var(--ink-soft); background: #faf9f6; border-bottom: 1px solid var(--line); white-space: nowrap; padding: .65rem .85rem; }
 .data-table td { padding: .7rem .85rem; border-color: var(--line); vertical-align: middle; }
