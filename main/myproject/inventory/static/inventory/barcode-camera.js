@@ -1,6 +1,8 @@
 (() => {
     const form = document.getElementById('inventory-scan-form');
     const barcode = form.elements.namedItem('barcode');
+    const photoButton = document.getElementById('barcode-photo-open');
+    const photoInput = document.getElementById('barcode-photo');
     const openButton = document.getElementById('barcode-camera-open');
     const closeButton = document.getElementById('barcode-camera-close');
     const preview = document.getElementById('barcode-camera-preview');
@@ -35,8 +37,45 @@
             stream?.getTracks().forEach(track => track.stop());
         }
         stream = undefined;
-        openButton.disabled = opening;
+        openButton.disabled = opening || photoButton.disabled;
     }
+
+    photoButton.hidden = !window.ZXingBrowser;
+    photoButton.addEventListener('click', () => {
+        stopCamera();
+        status.textContent = '';
+        photoInput.click();
+    });
+    photoInput.addEventListener('change', async () => {
+        const photo = photoInput.files[0];
+        photoInput.value = '';
+        if (!photo) return;
+
+        photoButton.disabled = true;
+        openButton.disabled = true;
+        status.textContent = 'กำลังอ่านบาร์โค้ดจากรูป…';
+        const photoUrl = URL.createObjectURL(photo);
+        try {
+            const image = new Image();
+            image.src = photoUrl;
+            await image.decode();
+            const reader = new window.ZXingBrowser.BrowserMultiFormatReader();
+            const result = await reader.decodeFromImageElement(image);
+            const code = result.getText().trim();
+            if (!code || code.length > barcode.maxLength) {
+                status.textContent = 'รหัสจากรูปใช้ไม่ได้ กรุณาถ่ายใหม่หรือพิมพ์รหัส';
+                return;
+            }
+            barcode.value = code;
+            status.textContent = 'อ่านรหัสแล้ว ตรวจสอบรหัสและกดสแกน';
+        } catch {
+            status.textContent = 'อ่านบาร์โค้ดจากรูปไม่ได้ ลองถ่ายให้เห็นทั้งรหัสและให้แท่งบาร์โค้ดคมชัด';
+        } finally {
+            URL.revokeObjectURL(photoUrl);
+            photoButton.disabled = false;
+            openButton.disabled = opening;
+        }
+    });
 
     openButton.hidden = false;
     openButton.addEventListener('click', async () => {
@@ -81,7 +120,7 @@
             }
         } finally {
             opening = false;
-            openButton.disabled = active;
+            openButton.disabled = active || photoButton.disabled;
         }
     });
 
